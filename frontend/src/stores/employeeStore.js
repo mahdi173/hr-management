@@ -37,11 +37,12 @@ export const useEmployeeStore = defineStore("employee", {
     async fetchEmployees() {
       this.isLoading = true;
       try {
-        const data = await api.get("/employees/");
-        const items = Array.isArray(data) ? data : data.items || [];
+        const data = await api.get('/employees/');
+        const items = Array.isArray(data) ? data : (data.items || []);
+        
         this.employees = items.map(this.formatEmployeeForUI);
       } catch (err) {
-        this.error = "Erreur chargement employés";
+        this.error = 'Erreur chargement employés';
       } finally {
         this.isLoading = false;
       }

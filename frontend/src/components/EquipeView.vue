@@ -6,6 +6,9 @@
                 <p class="text-body-1 text-grey-darken-1">Gérez vos collaborateurs et leurs contrats.</p>
             </div>
             <div class="mt-4 mt-md-0 d-flex align-center">
+                <v-switch v-model="showInactive" label="Afficher les inactifs" color="primary" hide-details
+                    density="compact" class="mr-4 text-body-2 font-weight-medium"></v-switch>
+
                 <v-text-field v-model="search" prepend-inner-icon="mdi-magnify" placeholder="Rechercher un membre..."
                     variant="outlined" density="compact" hide-details bg-color="white" rounded="lg"
                     style="min-width: 280px;"></v-text-field>
@@ -18,7 +21,7 @@
         </div>
 
         <v-card border elevation="0" rounded="xl" class="overflow-hidden">
-            <v-data-table :headers="headers" :items="employeeStore.employees" :search="search"
+            <v-data-table :headers="headers" :items="displayedEmployees" :search="search"
                 :loading="employeeStore.isLoading" hover class="bg-white">
 
                 <template v-slot:item.name="{ item }">
@@ -127,7 +130,7 @@
                 <h3 class="text-h6 font-weight-bold mb-2">Supprimer ce collaborateur ?</h3>
                 <p class="text-body-2 text-grey-darken-1 mb-6 px-4">
                     Êtes-vous sûr de vouloir supprimer <strong>{{ itemToDelete?.firstName }} {{ itemToDelete?.lastName
-                        }}</strong> ? Cette action retirera également cette personne des plannings futurs.
+                    }}</strong> ? Cette action retirera également cette personne des plannings futurs.
                 </p>
                 <div class="d-flex justify-center mb-2">
                     <v-btn variant="text" color="grey-darken-2" class="mr-3 font-weight-medium" rounded="lg"
@@ -151,6 +154,8 @@ const roleStore = useRoleStore()
 const contractStore = useContractStore()
 
 const search = ref('')
+
+const showInactive = ref(false)
 
 const dialog = ref(false)
 const dialogDelete = ref(false)
@@ -221,9 +226,9 @@ const confirmDelete = (item) => {
     dialogDelete.value = true
 }
 
-const deleteItemConfirm = () => {
+const deleteItemConfirm = async () => {
     if (itemToDelete.value) {
-        employeeStore.deleteEmployee(itemToDelete.value.id)
+        await employeeStore.deleteEmployee(itemToDelete.value.id)
     }
     dialogDelete.value = false
     itemToDelete.value = null
@@ -233,6 +238,13 @@ onMounted(async () => {
     if (roleStore.roles.length === 0) await roleStore.fetchRoles()
     if (contractStore.contracts.length === 0) await contractStore.fetchContracts()
     if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
+})
+
+const displayedEmployees = computed(() => {
+    if (showInactive.value) {
+        return employeeStore.employees;
+    }
+    return employeeStore.employees.filter(emp => emp.status !== 'Inactif');
 })
 </script>
 
