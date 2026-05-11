@@ -5,6 +5,7 @@ import logging
 from .models import Base
 from .database import engine
 from .features.employees import router as employees_router
+from .features.roles import router as roles_router
 from .seed import seed_database
 
 # Configure logging
@@ -89,6 +90,7 @@ app.add_middleware(
 
 # Include feature routers (vertical slice architecture)
 app.include_router(employees_router)
+app.include_router(roles_router)
 
 
 @app.get("/", tags=["health"])
