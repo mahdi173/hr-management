@@ -8,7 +8,7 @@
 
       <v-list class="px-4" nav>
         <v-list-item v-for="item in menuItems" :key="item.title" :prepend-icon="item.icon" :title="item.title"
-          :value="item.title" active-color="primary" rounded="lg" class="mb-2 list-item-hover"></v-list-item>
+          :to="item.path" active-color="primary" rounded="lg" class="mb-2 list-item-hover"></v-list-item>
       </v-list>
     </v-navigation-drawer>
 
@@ -34,7 +34,7 @@
 
     <v-main>
       <div class="pa-6 pa-md-8 pt-4 pt-md-6">
-        <DashboardView />
+        <router-view></router-view>
       </div>
     </v-main>
   </v-app>
@@ -47,11 +47,11 @@ import DashboardView from './components/DashboardView.vue'
 const drawer = ref(true)
 
 const menuItems = ref([
-  { title: 'Tableau de bord', icon: 'mdi-view-dashboard-outline' },
-  { title: 'Plannings', icon: 'mdi-calendar-month-outline' },
-  { title: 'Équipe', icon: 'mdi-account-group-outline' },
-  { title: 'Absences', icon: 'mdi-palm-tree' },
-  { title: 'Paramètres', icon: 'mdi-cog-outline' },
+  { title: 'Tableau de bord', icon: 'mdi-view-dashboard-outline', path: '/' },
+  { title: 'Plannings', icon: 'mdi-calendar-month-outline', path: '/plannings' },
+  { title: 'Équipe', icon: 'mdi-account-group-outline', path: '/equipe' },
+  { title: 'Absences', icon: 'mdi-palm-tree', path: '/absences' },
+  { title: 'Paramètres', icon: 'mdi-cog-outline', path: '/parametres' },
 ])
 </script>
 
