@@ -1,9 +1,13 @@
+"""
+Item model - represents a todo item.
+"""
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.sql import func
-from .database import Base
+from .base import Base
 
 
 class Item(Base):
+    """Todo item model"""
     __tablename__ = "items"
 
     id = Column(Integer, primary_key=True, index=True)

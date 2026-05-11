@@ -845,7 +845,269 @@ All features follow the established pattern:
 
 ---
 
-## 📝 Development Guidelines
+## � Team Organization for 2 Backend Developers
+
+### Recommended Split: Domain-Based Separation
+
+**Developer A: Personnel Domain Owner**
+- Owns all employee-related features and data
+- Primary files: `models.py` (Employee, Role, ContractType, Availability, Absence models)
+- Folders: `repositories/employee_*.py`, `services/employee_*.py`, `controllers/employee_*.py`, `controllers/absence_*.py`
+
+**Developer B: Schedule Domain Owner**
+- Owns all scheduling-related features and data  
+- Primary files: `models.py` (Schedule, Shift, ShiftAssignment models)
+- Folders: `repositories/schedule_*.py`, `services/schedule_*.py`, `controllers/schedule_*.py`, `controllers/shift_*.py`
+
+### Detailed Work Allocation
+
+#### Sprint 1: Foundation (Parallel Work)
+**Dev A:**
+- US-0.1: Database setup & migrations (shared setup)
+- US-1.1: Employee profiles (complete vertical slice)
+- US-1.2: Roles (complete vertical slice)
+- US-1.3: Contract types (complete vertical slice)
+
+**Dev B:**
+- US-0.1: Database setup & migrations (shared setup)
+- US-0.2: Authentication system (can start independently)
+- US-0.3: API documentation setup
+- US-0.4: Error handling and logging
+
+**Files to coordinate:** 
+- `models.py` - Both will add models, use separate branches, coordinate merge
+- `database.py` - Dev A sets up initially
+- `main.py` - Both will register routers, coordinate imports
+
+---
+
+#### Sprint 2: Employee Features (Dev A) + Infrastructure (Dev B)
+**Dev A:**
+- US-1.4: Availability management
+- US-1.5: Absences and leave management
+
+**Dev B:**
+- Finish US-0.2, US-0.3, US-0.4 if needed
+- Start US-1.6: Schedule creation (can begin structure)
+- Write comprehensive tests for authentication
+
+**Minimal overlap** - Dev A in employee domain, Dev B in schedule domain
+
+---
+
+#### Sprint 3: Schedule Foundation (Coordination Point)
+**Dev A:**
+- Complete any remaining employee features
+- Begin US-2.1: Conflict detection service (needs both domains)
+- Support Dev B with employee data access methods
+
+**Dev B:**
+- US-1.6: Schedule creation (complete)
+- US-1.7: Shift management and employee assignment ⚠️ **Coordination needed**
+- US-1.8: Working hours tracking
+
+**⚠️ Sync Point:** US-1.7 requires Employee models from Dev A. Dev B should:
+- Use Employee repository methods created by Dev A
+- Import schemas from Dev A's work
+- Coordinate on `models.py` for foreign keys
+
+**Merge strategy:** Dev A merges employee work first, then Dev B rebases and adds schedule features
+
+---
+
+#### Sprint 4: Visualization (Dev B) + Validation (Dev A)
+**Dev A:**
+- US-2.1: Conflict detection (uses both domains - good for Dev A to understand schedule models)
+- US-2.2: Compliance validation
+- Create shared validation utilities
+
+**Dev B:**
+- US-1.9: Schedule visualization (day/week/month views)
+- US-2.5: Schedule completion indicators
+- Focus on schedule domain features
+
+**Minimal overlap** - Different controller files
+
+---
+
+#### Sprint 5: Analytics and Alerts (Shared)
+**Dev A:**
+- US-2.3: Alert system (foundation)
+- US-2.4: Workload analysis (uses employee + schedule data)
+
+**Dev B:**
+- US-2.5: Schedule completion indicators (if not done)
+- Integrate alerts into schedule controllers
+- Support US-2.4 with schedule aggregation queries
+
+**Coordination:** Both work on analytics, share schemas for responses
+
+---
+
+#### Sprint 6-7: AI Features (Pair or Alternate)
+**Option A: Pair Programming** (Recommended for complex AI features)
+- Work together on US-3.1, US-3.2, US-3.3
+- One drives, one reviews
+- Share knowledge of ML libraries
+
+**Option B: Alternate Ownership**
+- Dev A: US-3.1 (Recommendations) + US-3.3 (Rebalancing)
+- Dev B: US-3.2 (Intelligent alerts) + US-4.1 (Auto-generation)
+
+---
+
+### File Ownership Matrix
+
+| File/Folder | Primary Owner | Secondary Owner | Coordination Level |
+|-------------|---------------|-----------------|-------------------|
+| `models.py` | Shared | Shared | **HIGH** - Use branches, frequent syncs |
+| `database.py` | Dev A | Dev B | Low - Initial setup only |
+| `main.py` | Shared | Shared | **MEDIUM** - Router registration |
+| `controllers/employee_*.py` | Dev A | - | None |
+| `controllers/role_*.py` | Dev A | - | None |
+| `controllers/absence_*.py` | Dev A | - | None |
+| `controllers/schedule_*.py` | Dev B | - | None |
+| `controllers/shift_*.py` | Dev B | - | None |
+| `controllers/auth_*.py` | Dev B | Dev A | Low |
+| `services/employee_*.py` | Dev A | - | None |
+| `services/schedule_*.py` | Dev B | - | None |
+| `services/conflict_*.py` | Dev A | Dev B | **MEDIUM** |
+| `services/recommendation_*.py` | Shared | Shared | **MEDIUM** |
+| `repositories/employee_*.py` | Dev A | - | None |
+| `repositories/schedule_*.py` | Dev B | - | None |
+| `repositories/base.py` | Dev A | Dev B | Low - Initial setup |
+| `schemas.py` | Shared | Shared | **HIGH** - Use separate files per domain |
+| `alembic/versions/` | Shared | Shared | **HIGH** - Sequential migrations |
+
+---
+
+### Git Workflow for Minimal Conflicts
+
+#### Branch Strategy
+```
+main
+├── dev-a/employee-profiles (US-1.1)
+├── dev-a/roles (US-1.2)
+├── dev-a/availability (US-1.4)
+├── dev-b/auth-system (US-0.2)
+├── dev-b/schedules (US-1.6)
+└── dev-b/shifts (US-1.7)
+```
+
+#### Merge Order (Critical)
+1. **Infrastructure first** (US-0.1, US-0.2) - Dev A and Dev B sync
+2. **Employee features** (US-1.1, 1.2, 1.3) - Dev A merges first
+3. **Schedule features** (US-1.6, 1.7) - Dev B rebases on Dev A's work, then merges
+4. **Cross-domain features** - Frequent syncs, pair review
+
+#### Daily Coordination
+- **Morning standup:** Share what files you'll touch today
+- **Before lunch:** Push WIP commits to feature branches
+- **End of day:** Pull from main, resolve conflicts in feature branch
+- **Before merge:** Communicate in chat "Merging US-X.X now"
+
+#### Conflict Prevention Rules
+1. **Split schemas.py early:**
+   ```
+   schemas/
+   ├── employee_schemas.py (Dev A)
+   ├── schedule_schemas.py (Dev B)
+   ├── common_schemas.py (Shared)
+   ```
+
+2. **Sequential migrations:**
+   - Dev A creates migrations on odd days
+   - Dev B creates migrations on even days
+   - OR use migration prefixes: `001_employee_`, `002_schedule_`
+
+3. **Import coordination:**
+   - Each dev imports from other's merged work
+   - Don't modify files you don't own
+   - Create adapter/helper functions if needed
+
+4. **Shared models.py strategy:**
+   ```python
+   # Dev A's section
+   class Employee(Base):
+       # ...
+   
+   class Role(Base):
+       # ...
+   
+   # Dev B's section  
+   class Schedule(Base):
+       # ...
+   
+   class Shift(Base):
+       # ...
+   ```
+   - Add clear comment boundaries
+   - Dev A adds at top, Dev B adds at bottom
+   - Coordinate before both edit same file
+
+---
+
+### Communication Checkpoints
+
+#### 🔴 Critical Sync Points (Must coordinate)
+1. **Before Sprint 3:** Dev B needs Dev A's Employee models for US-1.7
+2. **Before Sprint 5:** Both need to align on Alert/Analytics schemas
+3. **Before Sprint 6:** AI features require understanding both domains
+
+#### 🟡 Medium Sync Points (Review each other's PR)
+1. After US-1.3: Review employee domain structure
+2. After US-1.6: Review schedule domain structure  
+3. After US-2.1: Review conflict detection logic
+
+#### 🟢 Low Sync Points (FYI only)
+- Individual feature completions within owned domain
+- Test additions
+- Documentation updates
+
+---
+
+### Recommended File Structure to Minimize Conflicts
+
+```
+backend/app/
+├── models/
+│   ├── __init__.py (imports all models)
+│   ├── employee.py (Dev A owns)
+│   ├── schedule.py (Dev B owns)
+│   └── shared.py (base classes)
+├── schemas/
+│   ├── __init__.py
+│   ├── employee_schemas.py (Dev A)
+│   ├── schedule_schemas.py (Dev B)
+│   └── common_schemas.py (shared types)
+├── repositories/
+│   ├── employee_repository.py (Dev A)
+│   ├── role_repository.py (Dev A)
+│   ├── schedule_repository.py (Dev B)
+│   └── shift_repository.py (Dev B)
+├── services/
+│   ├── employee_service.py (Dev A)
+│   ├── schedule_service.py (Dev B)
+│   └── conflict_detection_service.py (Shared/Sprint 4)
+├── controllers/
+│   ├── employee_controller.py (Dev A)
+│   ├── schedule_controller.py (Dev B)
+│   └── shift_controller.py (Dev B)
+```
+
+**Benefit:** Each dev works in separate files 90% of the time, drastically reducing merge conflicts.
+
+---
+
+### Success Metrics
+- **< 5 merge conflicts per sprint** (indicates good separation)
+- **Each dev completes 3-4 User Stories per sprint**
+- **All tests passing before merge** (CI/CD enforced)
+- **Code review within 24 hours** (don't block each other)
+
+---
+
+## �📝 Development Guidelines
 
 ### Code Quality Standards
 - [ ] Follow PEP 8 style guide

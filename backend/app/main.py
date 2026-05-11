@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import models
+from .models import Base
 from .database import engine
 from .controllers import item_router
 
 # Create database tables
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 # OpenAPI and Swagger configuration
 app = FastAPI(
