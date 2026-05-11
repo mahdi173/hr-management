@@ -3,7 +3,6 @@
 from pydantic import BaseModel, Field, field_validator
 from datetime import date, datetime
 from typing import Optional, List
-from ...absences.shared.absence_dto import AbsenceStatus # I will define it here instead of importing if it causes circular, but let's check model
 
 # Import status from model to keep it consistent
 from ....models.absence import AbsenceStatus

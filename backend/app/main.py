@@ -10,6 +10,7 @@ from .features.absences import router as absences_router
 from .features.schedules import router as schedules_router
 from .features.contract_types import router as contract_types_router
 from .features.availabilities import router as availabilities_router
+from .features.shifts import router as shifts_router
 from .seed import seed_database
 
 # Configure logging
@@ -99,6 +100,7 @@ app.include_router(absences_router)
 app.include_router(schedules_router)
 app.include_router(contract_types_router)
 app.include_router(availabilities_router)
+app.include_router(shifts_router)
 
 
 @app.get("/", tags=["health"])

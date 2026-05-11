@@ -47,17 +47,23 @@ class BaseRepository(Generic[ModelType]):
         """
         return self.db.query(self.model).offset(skip).limit(limit).all()
 
-    def create(self, obj_in: dict) -> ModelType:
+    def create(self, obj_in) -> ModelType:
         """
         Create a new record
         
         Args:
-            obj_in: Dictionary of model attributes
+            obj_in: Dictionary of model attributes or model instance
             
         Returns:
             Created model instance
         """
-        db_obj = self.model(**obj_in)
+        # If obj_in is already a model instance, use it directly
+        if isinstance(obj_in, self.model):
+            db_obj = obj_in
+        else:
+            # Otherwise, treat it as a dictionary
+            db_obj = self.model(**obj_in)
+        
         self.db.add(db_obj)
         self.db.commit()
         self.db.refresh(db_obj)
