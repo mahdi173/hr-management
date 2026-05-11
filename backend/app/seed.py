@@ -3,7 +3,7 @@ Database seeding script - creates initial data with existence checks.
 Seeds are idempotent - safe to run multiple times.
 """
 from sqlalchemy.orm import Session
-from app.models import Role, ContractType, User
+from app.models import Role, ContractType, User, AbsenceType
 from app.database import SessionLocal
 import logging
 
@@ -127,6 +127,45 @@ def seed_contract_types(db: Session) -> None:
     db.commit()
 
 
+def seed_absence_types(db: Session) -> None:
+    """Seed default absence types with existence checks"""
+    default_absence_types = [
+        {
+            "name": "Vacation",
+            "description": "Paid annual leave",
+            "requires_approval": True,
+            "is_paid": True
+        },
+        {
+            "name": "Sick Leave",
+            "description": "Medical leave",
+            "requires_approval": True,
+            "is_paid": True
+        },
+        {
+            "name": "Personal Leave",
+            "description": "Unpaid personal leave",
+            "requires_approval": True,
+            "is_paid": False
+        },
+        {
+            "name": "Public Holiday",
+            "description": "Official public holidays",
+            "requires_approval": False,
+            "is_paid": True
+        }
+    ]
+    
+    for type_data in default_absence_types:
+        existing = db.query(AbsenceType).filter(AbsenceType.name == type_data["name"]).first()
+        if not existing:
+            absence_type = AbsenceType(**type_data)
+            db.add(absence_type)
+            logger.info(f"✓ Created absence type: {type_data['name']}")
+    
+    db.commit()
+
+
 def seed_database() -> None:
     """
     Main seeding function - runs all seed operations.
@@ -139,6 +178,7 @@ def seed_database() -> None:
         # Seed in order of dependencies
         seed_roles(db)
         seed_contract_types(db)
+        seed_absence_types(db)
         
         logger.info("✅ Database seeding completed successfully!")
         
