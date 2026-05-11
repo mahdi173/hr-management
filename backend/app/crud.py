@@ -1,37 +1,60 @@
+"""CRUD operations using repository layer"""
+
 from sqlalchemy.orm import Session
-from . import models, schemas
+from . import schemas
+from .repositories import ItemRepository
+
+
+def get_item_repository(db: Session) -> ItemRepository:
+    """Get item repository instance"""
+    return ItemRepository(db)
 
 
 def get_item(db: Session, item_id: int):
-    return db.query(models.Item).filter(models.Item.id == item_id).first()
+    """Get item by ID"""
+    repo = get_item_repository(db)
+    return repo.get_by_id(item_id)
 
 
 def get_items(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Item).offset(skip).limit(limit).all()
+    """Get all items with pagination"""
+    repo = get_item_repository(db)
+    return repo.get_all(skip=skip, limit=limit)
 
 
 def create_item(db: Session, item: schemas.ItemCreate):
-    db_item = models.Item(**item.model_dump())
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item
+    """Create a new item"""
+    repo = get_item_repository(db)
+    return repo.create(item.model_dump())
 
 
 def update_item(db: Session, item_id: int, item: schemas.ItemCreate):
-    db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
-    if db_item:
-        for key, value in item.model_dump().items():
-            setattr(db_item, key, value)
-        db.commit()
-        db.refresh(db_item)
-    return db_item
+    """Update an existing item"""
+    repo = get_item_repository(db)
+    return repo.update(item_id, item.model_dump())
 
 
 def delete_item(db: Session, item_id: int):
-    db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
-    if db_item:
-        db.delete(db_item)
-        db.commit()
-        return True
-    return False
+    """Delete an item"""
+    repo = get_item_repository(db)
+    return repo.delete(item_id)
+
+
+# Additional repository methods exposed
+def get_completed_items(db: Session, skip: int = 0, limit: int = 100):
+    """Get completed items"""
+    repo = get_item_repository(db)
+    return repo.get_completed(skip=skip, limit=limit)
+
+
+def get_pending_items(db: Session, skip: int = 0, limit: int = 100):
+    """Get pending items"""
+    repo = get_item_repository(db)
+    return repo.get_pending(skip=skip, limit=limit)
+
+
+def search_items_by_title(db: Session, title: str, skip: int = 0, limit: int = 100):
+    """Search items by title"""
+    repo = get_item_repository(db)
+    return repo.search_by_title(title, skip=skip, limit=limit)
+

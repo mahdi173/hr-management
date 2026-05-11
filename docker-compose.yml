@@ -1,6 +1,26 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: mvp-postgres
+    environment:
+      - POSTGRES_USER=mvp_user
+      - POSTGRES_PASSWORD=mvp_password
+      - POSTGRES_DB=mvp_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - mvp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mvp_user -d mvp_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Backend FastAPI service
   backend:
     build:
@@ -11,12 +31,14 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-      - backend-data:/app/data
     environment:
-      - DATABASE_URL=sqlite:///./data/app.db
+      - DATABASE_URL=postgresql://mvp_user:mvp_password@postgres:5432/mvp_db
       - PYTHONUNBUFFERED=1
     networks:
       - mvp-network
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
@@ -48,5 +70,5 @@ networks:
     driver: bridge
 
 volumes:
-  backend-data:
+  postgres-data:
     driver: local

@@ -180,3 +180,52 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Item not found")
     return {"message": "Item deleted successfully"}
+
+
+@app.get("/items/filter/completed", response_model=List[schemas.Item], tags=["items"])
+def get_completed_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """
+    ## Get Completed Items
+    
+    Retrieve all completed items.
+    
+    **Parameters:**
+    * **skip**: Number of items to skip (for pagination)
+    * **limit**: Maximum number of items to return (max: 100)
+    
+    **Returns:** List of completed items
+    """
+    return crud.get_completed_items(db, skip=skip, limit=limit)
+
+
+@app.get("/items/filter/pending", response_model=List[schemas.Item], tags=["items"])
+def get_pending_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """
+    ## Get Pending Items
+    
+    Retrieve all pending (not completed) items.
+    
+    **Parameters:**
+    * **skip**: Number of items to skip (for pagination)
+    * **limit**: Maximum number of items to return (max: 100)
+    
+    **Returns:** List of pending items
+    """
+    return crud.get_pending_items(db, skip=skip, limit=limit)
+
+
+@app.get("/items/search/", response_model=List[schemas.Item], tags=["items"])
+def search_items(title: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """
+    ## Search Items by Title
+    
+    Search for items by title (case-insensitive partial match).
+    
+    **Parameters:**
+    * **title**: Search term for title
+    * **skip**: Number of items to skip (for pagination)
+    * **limit**: Maximum number of items to return (max: 100)
+    
+    **Returns:** List of matching items
+    """
+    return crud.search_items_by_title(db, title=title, skip=skip, limit=limit)

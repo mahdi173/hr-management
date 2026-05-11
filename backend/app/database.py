@@ -1,16 +1,22 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 import os
+from typing import Generator
 
-# SQLite database URL
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/app.db")
+# PostgreSQL database URL
+SQLALCHEMY_DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://mvp_user:mvp_password@localhost:5432/mvp_db"
+)
 
-# Create engine
-# For SQLite, we need to set check_same_thread to False
+# Create engine with PostgreSQL optimizations
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in SQLALCHEMY_DATABASE_URL else {}
+    pool_pre_ping=True,  # Verify connections before using
+    pool_size=10,  # Connection pool size
+    max_overflow=20,  # Max overflow connections
+    echo=False  # Set to True for SQL query logging
 )
 
 # Create SessionLocal class
@@ -21,7 +27,8 @@ Base = declarative_base()
 
 
 # Dependency to get database session
-def get_db():
+def get_db() -> Generator[Session, None, None]:
+    """Database session dependency for FastAPI"""
     db = SessionLocal()
     try:
         yield db

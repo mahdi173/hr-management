@@ -1,12 +1,14 @@
 # MVP Full-Stack Application
 
-A simple MVP full-stack application with FastAPI backend, Vue.js frontend, and SQLite database, all containerized with Docker.
+A simple MVP full-stack application with FastAPI backend, Vue.js frontend, and PostgreSQL database, all containerized with Docker.
 
 ## 🚀 Features
 
-- **Backend**: FastAPI (Python) with RESTful API
+- **Backend**: FastAPI (Python) with RESTful API and Repository Pattern
 - **Frontend**: Vue.js 3 with Vite
-- **Database**: SQLite for data persistence
+- **Database**: PostgreSQL with connection pooling
+- **Repository Layer**: Clean architecture with separation of concerns
+- **Migrations**: Alembic for database schema management
 - **Containerization**: Docker & Docker Compose for easy deployment
 - **CRUD Operations**: Complete Create, Read, Update, Delete functionality
 - **Modern UI**: Responsive design with gradient styling
@@ -22,14 +24,21 @@ A simple MVP full-stack application with FastAPI backend, Vue.js frontend, and S
 ```
 .
 ├── backend/                  # FastAPI backend application
+│   ├── alembic/             # Database migration scripts
+│   │   ├── versions/        # Migration versions
+│   │   └── env.py           # Alembic environment
 │   ├── app/
+│   │   ├── repositories/    # Repository layer
+│   │   │   ├── base.py      # Base repository with common operations
+│   │   │   └── item_repository.py  # Item-specific repository
 │   │   ├── __init__.py
 │   │   ├── main.py          # Main application entry point
 │   │   ├── database.py      # Database configuration
 │   │   ├── models.py        # SQLAlchemy models
 │   │   ├── schemas.py       # Pydantic schemas
-│   │   └── crud.py          # CRUD operations
+│   │   └── crud.py          # CRUD operations facade
 │   ├── requirements.txt     # Python dependencies
+│   ├── alembic.ini          # Alembic configuration
 │   ├── Dockerfile
 │   └── .dockerignore
 │
@@ -157,10 +166,54 @@ curl "http://localhost:8000/items/"
 
 ## 🗄️ Database
 
-The application uses SQLite as the database:
-- Database file: `backend/data/app.db`
-- The database is persisted in a Docker volume named `backend-data`
-- Schema is automatically created on first run
+The application uses PostgreSQL as the database:
+- **Image**: PostgreSQL 16 Alpine
+- **Connection pooling**: Configured with pool size of 10 and max overflow of 20
+- **Persistence**: Data is persisted in a Docker volume named `postgres-data`
+- **Migrations**: Alembic is configured for schema migrations
+- **Schema**: Automatically created on first run
+
+### Database Credentials (Development)
+- **User**: mvp_user
+- **Password**: mvp_password
+- **Database**: mvp_db
+- **Port**: 5432
+
+### Running Migrations
+
+```bash
+# Enter the backend container
+docker exec -it mvp-backend bash
+
+# Create a new migration
+alembic revision --autogenerate -m "description"
+
+# Run migrations
+alembic upgrade head
+
+# Rollback migration
+alembic downgrade -1
+```
+
+## 🏗️ Repository Pattern
+
+The backend implements a repository pattern for clean separation of concerns:
+
+### Base Repository
+- Generic CRUD operations (create, read, update, delete)
+- Pagination support
+- Count and exists methods
+- Type-safe with Python generics
+
+### Item Repository
+Extends base repository with item-specific operations:
+- `get_completed()` - Get all completed items
+- `get_pending()` - Get all pending items
+- `search_by_title()` - Search items by title
+- `mark_as_completed()` - Mark item as done
+- `mark_as_pending()` - Mark item as not done
+- `count_completed()` - Count completed items
+- `count_pending()` - Count pending items
 
 ## 🔧 Configuration
 
@@ -169,8 +222,13 @@ The application uses SQLite as the database:
 Edit `.env` file to configure:
 
 ```env
+# Database
+POSTGRES_USER=mvp_user
+POSTGRES_PASSWORD=mvp_password
+POSTGRES_DB=mvp_db
+DATABASE_URL=postgresql://mvp_user:mvp_password@postgres:5432/mvp_db
+
 # Backend
-DATABASE_URL=sqlite:///./data/app.db
 BACKEND_PORT=8000
 
 # Frontend
@@ -238,11 +296,25 @@ Open [http://localhost:3000](http://localhost:3000) in your browser and:
 
 ```bash
 cd backend
+
+# Create virtual environment
 python -m venv venv
 venv\Scripts\activate  # On Windows
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Set DATABASE_URL environment variable
+$env:DATABASE_URL="postgresql://mvp_user:mvp_password@localhost:5432/mvp_db"
+
+# Run migrations
+alembic upgrade head
+
+# Start server
 uvicorn app.main:app --reload
 ```
+
+**Note**: You'll need a local PostgreSQL instance running on port 5432
 
 ### Frontend (Local Development)
 
@@ -257,19 +329,29 @@ npm run dev
 For production deployment:
 
 1. Update `Dockerfile` configurations for production builds
-2. Set appropriate environment variables
-3. Use a production-grade database (PostgreSQL, MySQL)
-4. Configure reverse proxy (Nginx)
+2. Set secure environment variables (change default passwords!)
+3. Use managed PostgreSQL service (AWS RDS, Azure Database, etc.) or configure PostgreSQL with SSL
+4. Configure reverse proxy (Nginx) with SSL/TLS
 5. Enable HTTPS
 6. Set up proper logging and monitoring
+7. Configure backup strategy for PostgreSQL
+8. Use secrets management (Docker Secrets, Vault, etc.)
 
 ## 📚 Technologies Used
 
 ### Backend
 - **FastAPI**: Modern, fast web framework for building APIs
 - **SQLAlchemy**: SQL toolkit and ORM
+- **PostgreSQL**: Robust relational database
 - **Pydantic**: Data validation using Python type annotations
 - **Uvicorn**: ASGI server
+- **Alembic**: Database migration tool
+- **psycopg2**: PostgreSQL adapter for Python
+
+### Architecture
+- **Repository Pattern**: Clean separation of data access logic
+- **Dependency Injection**: FastAPI's dependency system
+- **Type Safety**: Full typing with Python type hints and Pydantic
 
 ### Frontend
 - **Vue.js 3**: Progressive JavaScript framework
