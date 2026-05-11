@@ -29,7 +29,6 @@ from .preference import EmployeePreference, PreferredColleague
 
 # Infrastructure
 from .user import User
-from .item import Item  # Legacy - can be removed once new models are in use
 
 __all__ = [
     # Base
@@ -74,5 +73,4 @@ __all__ = [
     
     # Infrastructure
     "User",
-    "Item",  # Legacy
 ]

@@ -1,15 +1,16 @@
 # MVP Full-Stack Application
 
-A simple MVP full-stack application with FastAPI backend, Vue.js frontend, and PostgreSQL database, all containerized with Docker.
+A full-stack employee scheduling and time management application with FastAPI backend, Vue.js frontend, and PostgreSQL database, all containerized with Docker.
 
 ## 🚀 Features
 
-- **Backend**: FastAPI (Python) with clean three-layer architecture
+- **Backend**: FastAPI (Python) with **Vertical Slice Architecture**
 - **Frontend**: Vue.js 3 with Vite
 - **Database**: PostgreSQL with connection pooling
-- **Three-Layer Architecture**: Controllers → Services → Repositories
+- **Architecture**: Feature-driven vertical slices (see [VERTICAL_SLICE_ARCHITECTURE.md](backend/VERTICAL_SLICE_ARCHITECTURE.md))
 - **Dependency Injection**: FastAPI's dependency system throughout
-- **Migrations**: Alembic for database schema management
+- **Migrations**: Alembic for database schema management (auto-run on startup)
+- **Database Seeding**: Idempotent seed data with existence checks
 - **Containerization**: Docker & Docker Compose for easy deployment
 - **CRUD Operations**: Complete Create, Read, Update, Delete functionality
 - **Modern UI**: Responsive design with gradient styling
@@ -29,24 +30,33 @@ A simple MVP full-stack application with FastAPI backend, Vue.js frontend, and P
 │   │   ├── versions/        # Migration versions
 │   │   └── env.py           # Alembic environment
 │   ├── app/
-│   │   ├── controllers/     # Controller layer (API endpoints)
-│   │   │   ├── __init__.py
-│   │   │   └── item_controller.py  # Item endpoints with routing
-│   │   ├── services/        # Service layer (Business logic)
-│   │   │   ├── base.py      # Base service with common operations
-│   │   │   └── item_service.py     # Item business logic
-│   │   ├── repositories/    # Repository layer (Data access)
-│   │   │   ├── base.py      # Base repository with common operations
-│   │   │   └── item_repository.py  # Item-specific data access
+│   │   ├── features/        # VERTICAL SLICE ARCHITECTURE
+│   │   │   ├── employees/   # Employee domain features
+│   │   │   │   ├── shared/              # Shared DTOs
+│   │   │   │   ├── create_employee/     # Feature: Create
+│   │   │   │   ├── get_all_employees/   # Feature: List
+│   │   │   │   ├── get_one_employee/    # Feature: Get by ID
+│   │   │   │   ├── update_employee/     # Feature: Update
+│   │   │   │   ├── delete_employee/     # Feature: Delete
+│   │   │   │   └── get_employees_by_role/ # Feature: Filter
+│   │   │   └── items/       # Item domain features (legacy)
+│   │   ├── repositories/    # Data access layer (shared)
+│   │   │   ├── base.py      # Base repository
+│   │   │   ├── employee_repository.py
+│   │   │   └── item_repository.py
+│   │   ├── models/          # Database models (shared)
+│   │   │   ├── employee.py
+│   │   │   ├── role.py
+│   │   │   ├── contract_type.py
+│   │   │   └── ... (all models)
 │   │   ├── __init__.py
-│   │   ├── main.py          # Main application with dependency injection
+│   │   ├── main.py          # Application entry point
 │   │   ├── database.py      # Database configuration
-│   │   ├── models.py        # SQLAlchemy models
-│   │   ├── schemas.py       # Pydantic schemas
-│   │   └── crud.py          # (Deprecated - use services instead)
+│   │   └── seed.py          # Database seeding (idempotent)
 │   ├── requirements.txt     # Python dependencies
 │   ├── alembic.ini          # Alembic configuration
 │   ├── Dockerfile
+│   ├── VERTICAL_SLICE_ARCHITECTURE.md  # Architecture documentation
 │   └── .dockerignore
 │
 ├── frontend/                # Vue.js frontend application

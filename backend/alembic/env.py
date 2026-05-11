@@ -10,7 +10,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.database import Base
-from app.models import Item  # Import all models
+# Import all models for Alembic auto-generation
+import app.models  # This imports all models from __init__.py
 
 # this is the Alembic Config object
 config = context.config

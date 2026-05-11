@@ -1,37 +1,59 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import logging
 
 from .models import Base
 from .database import engine
-from .controllers import item_router
+from .features.employees import router as employees_router
+from .seed import seed_database
 
-# Create database tables
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Create database tables (auto-migrate)
+logger.info("🔄 Checking database schema...")
 Base.metadata.create_all(bind=engine)
+logger.info("✅ Database schema is up to date")
+
+# Seed database with initial data
+logger.info("🌱 Seeding database...")
+try:
+    seed_database()
+except Exception as e:
+    logger.warning(f"⚠️  Database seeding skipped or failed: {e}")
 
 # OpenAPI and Swagger configuration
 app = FastAPI(
-    title="MVP Todo API",
+    title="Timeapp API",
     description="""
-    ## Simple Todo API with FastAPI
+    ## Employee Scheduling & Time Management API
     
-    This API allows you to manage todo items with full CRUD operations.
+    This API provides comprehensive employee and schedule management capabilities.
     
     ### Features
-    * **Create** new items
-    * **Read** all items or specific items
-    * **Update** existing items
-    * **Delete** items
+    * **Employee Management** - Create, read, update, and delete employee profiles
+    * **Role Management** - Define and assign roles to employees
+    * **Contract Types** - Manage different employment arrangements
+    * **Schedule Management** - Create and manage work schedules
+    * **Availability Tracking** - Track employee availability
+    * **Absence Management** - Handle employee absences
     
     ### Architecture
-    * **Controllers** - Handle HTTP requests and responses
-    * **Services** - Contain business logic
+    * **Vertical Slices** - Features organized by business capability
+    * **Use Cases** - Encapsulate business logic for each feature
     * **Repositories** - Manage data access
+    * **Models** - Database schema definitions
     
     ### Tech Stack
     * FastAPI
     * SQLAlchemy
     * PostgreSQL Database
     * Pydantic for validation
+    * Alembic for migrations
     """,
     version="1.0.0",
     terms_of_service="http://example.com/terms/",
@@ -50,8 +72,8 @@ app = FastAPI(
             "description": "Health check and status endpoints",
         },
         {
-            "name": "items",
-            "description": "Operations with todo items. CRUD functionality for managing items.",
+            "name": "employees",
+            "description": "Employee management operations - CRUD functionality for managing employee profiles",
         },
     ]
 )
@@ -65,8 +87,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers from controllers
-app.include_router(item_router)
+# Include feature routers (vertical slice architecture)
+app.include_router(employees_router)
 
 
 @app.get("/", tags=["health"])
