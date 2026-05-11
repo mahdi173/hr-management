@@ -8,7 +8,7 @@
 2. **Components**: Reusable UI elements (buttons, modals, schedule grids).
 3. **Stores (Pinia)**: Global state management and API data caching.
 4. **Composables**: Reusable Vue 3 Composition API logic (e.g., `useSchedule()`, `useAuth()`).
-5. **Services/API**: Axios wrapper for backend communication.
+5. **Services/API**: Fetch wrapper for backend communication.
 
 ---
 
