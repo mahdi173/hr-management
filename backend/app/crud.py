@@ -1,8 +1,27 @@
-"""CRUD operations using repository layer"""
+"""
+DEPRECATED: CRUD operations - Legacy compatibility layer
 
+This module is deprecated and maintained only for backward compatibility.
+Use the service layer (app.services) instead.
+
+New architecture:
+- Controllers (app.controllers) -> Handle HTTP requests/responses
+- Services (app.services) -> Business logic
+- Repositories (app.repositories) -> Data access
+"""
+
+import warnings
 from sqlalchemy.orm import Session
 from . import schemas
 from .repositories import ItemRepository
+
+
+# Show deprecation warning when module is imported
+warnings.warn(
+    "crud.py is deprecated. Use services layer instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 def get_item_repository(db: Session) -> ItemRepository:

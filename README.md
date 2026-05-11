@@ -4,10 +4,11 @@ A simple MVP full-stack application with FastAPI backend, Vue.js frontend, and P
 
 ## 🚀 Features
 
-- **Backend**: FastAPI (Python) with RESTful API and Repository Pattern
+- **Backend**: FastAPI (Python) with clean three-layer architecture
 - **Frontend**: Vue.js 3 with Vite
 - **Database**: PostgreSQL with connection pooling
-- **Repository Layer**: Clean architecture with separation of concerns
+- **Three-Layer Architecture**: Controllers → Services → Repositories
+- **Dependency Injection**: FastAPI's dependency system throughout
 - **Migrations**: Alembic for database schema management
 - **Containerization**: Docker & Docker Compose for easy deployment
 - **CRUD Operations**: Complete Create, Read, Update, Delete functionality
@@ -28,15 +29,21 @@ A simple MVP full-stack application with FastAPI backend, Vue.js frontend, and P
 │   │   ├── versions/        # Migration versions
 │   │   └── env.py           # Alembic environment
 │   ├── app/
-│   │   ├── repositories/    # Repository layer
+│   │   ├── controllers/     # Controller layer (API endpoints)
+│   │   │   ├── __init__.py
+│   │   │   └── item_controller.py  # Item endpoints with routing
+│   │   ├── services/        # Service layer (Business logic)
+│   │   │   ├── base.py      # Base service with common operations
+│   │   │   └── item_service.py     # Item business logic
+│   │   ├── repositories/    # Repository layer (Data access)
 │   │   │   ├── base.py      # Base repository with common operations
-│   │   │   └── item_repository.py  # Item-specific repository
+│   │   │   └── item_repository.py  # Item-specific data access
 │   │   ├── __init__.py
-│   │   ├── main.py          # Main application entry point
+│   │   ├── main.py          # Main application with dependency injection
 │   │   ├── database.py      # Database configuration
 │   │   ├── models.py        # SQLAlchemy models
 │   │   ├── schemas.py       # Pydantic schemas
-│   │   └── crud.py          # CRUD operations facade
+│   │   └── crud.py          # (Deprecated - use services instead)
 │   ├── requirements.txt     # Python dependencies
 │   ├── alembic.ini          # Alembic configuration
 │   ├── Dockerfile
@@ -139,14 +146,24 @@ docker-compose up --build
 ## 📡 API Endpoints
 
 ### Health Check
+- `GET /` - Welcome message
 - `GET /health` - Check API health status
 
-### Items
-- `GET /items/` - Get all items
+### Items (CRUD)
 - `POST /items/` - Create a new item
+- `GET /items/` - Get all items (with pagination)
 - `GET /items/{item_id}` - Get a specific item
 - `PUT /items/{item_id}` - Update an item
 - `DELETE /items/{item_id}` - Delete an item
+
+### Items (Filtering & Search)
+- `GET /items/filter/completed` - Get all completed items
+- `GET /items/filter/pending` - Get all pending items
+- `GET /items/search/?title={query}` - Search items by title
+
+### Items (Actions)
+- `POST /items/{item_id}/toggle` - Toggle item completion status
+- `GET /items/statistics/summary` - Get item statistics (total, completed, pending, completion rate)
 
 ### Example API Request
 
@@ -189,25 +206,82 @@ docker exec -it mvp-backend bash
 alembic revision --autogenerate -m "description"
 
 # Run migrations
-alembic upgrade head
+alembicThree-Layer Architecture
 
-# Rollback migration
-alembic downgrade -1
+The backend implements a clean three-layer architecture with dependency injection:
+
+### 1. Controllers Layer (`app/controllers/`)
+**Responsibility**: Handle HTTP requests and responses
+- Define API routes and endpoints
+- Validate request data using Pydantic schemas
+- Return appropriate HTTP responses
+- Handle HTTP-specific logic (headers, status codes, etc.)
+- **Dependencies**: Services (via dependency injection)
+
+**Example**: `ItemController` handles all `/items/*` endpoints
+
+### 2. Services Layer (`app/services/`)
+**Responsibility**: Contain business logic and orchestration
+- Implement business rules and validation
+- Coordinate between multiple repositories if needed
+- Transform data between layers
+- Handle complex operations and workflows
+- **Dependencies**: Repositories (via dependency injection)
+
+**Key Services**:
+- `BaseService`: Generic business operations
+- `ItemService`: Item-specific business logic including:
+  - Item validation and creation
+  - Search and filtering logic
+  - Statistics calculation
+  - Status management
+
+### 3. Repositories Layer (`app/repositories/`)
+**Responsibility**: Data access and persistence
+- Execute database queries
+- Map between ORM models and Python objects
+- Provide data access abstraction
+- No business logic - pure data operations
+- **Dependencies**: SQLAlchemy models and database session
+
+**Key Repositories**:
+- `BaseRepository`: Generic CRUD operations (create, read, update, delete)
+- `ItemRepository`: Item-specific queries (search, filter by status, counts)
+
+### Dependency Flow
+```
+HTTP Request
+    ↓
+Controller (validates, routes)
+    ↓
+Service (business logic)
+    ↓
+Repository (data access)
+    ↓
+Database
 ```
 
-## 🏗️ Repository Pattern
+### Dependency Injection Example
+```python
+# In controller
+def create_item(
+    item: ItemCreate,
+    service: ItemService = Depends(get_item_service)  # DI
+):
+    return service.create_item(item)
 
-The backend implements a repository pattern for clean separation of concerns:
+# Service gets repository via DI
+class ItemService:
+    def __init__(self, db: Session):
+        self.repository = ItemRepository(db)  # DI
+```
 
-### Base Repository
-- Generic CRUD operations (create, read, update, delete)
-- Pagination support
-- Count and exists methods
-- Type-safe with Python generics
-
-### Item Repository
-Extends base repository with item-specific operations:
-- `get_completed()` - Get all completed items
+### Benefits
+- **Separation of Concerns**: Each layer has a single responsibility
+- **Testability**: Easy to mock dependencies for unit testing
+- **Maintainability**: Changes in one layer don't affect others
+- **Reusability**: Services and repositories can be reused across controllers
+- **Scalability**: Easy to add new features following the same patterntems
 - `get_pending()` - Get all pending items
 - `search_by_title()` - Search items by title
 - `mark_as_completed()` - Mark item as done
@@ -349,9 +423,10 @@ For production deployment:
 - **psycopg2**: PostgreSQL adapter for Python
 
 ### Architecture
-- **Repository Pattern**: Clean separation of data access logic
-- **Dependency Injection**: FastAPI's dependency system
+- **Three-Layer Architecture**: Clean separation with Controllers, Services, and Repositories
+- **Dependency Injection**: FastAPI's dependency system throughout all layers
 - **Type Safety**: Full typing with Python type hints and Pydantic
+- **Generic Base Classes**: Reusable base classes for services and repositories
 
 ### Frontend
 - **Vue.js 3**: Progressive JavaScript framework
