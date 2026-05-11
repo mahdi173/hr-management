@@ -34,6 +34,22 @@ def db_session():
     transaction = connection.begin()
     session = TestingSessionLocal(bind=connection)
     
+    # Seed roles and contract types for tests
+    from app.models.role import Role
+    from app.models.contract_type import ContractType
+    
+    # Create roles if they don't exist
+    if not session.query(Role).filter(Role.id == 1).first():
+        session.add(Role(id=1, name="Manager", is_active=True))
+        session.add(Role(id=2, name="Employee", is_active=True))
+        session.commit()
+    
+    # Create contract types if they don't exist
+    if not session.query(ContractType).filter(ContractType.id == 1).first():
+        session.add(ContractType(id=1, name="CDI", weekly_hours=35.0, is_active=True))
+        session.add(ContractType(id=2, name="CDD", weekly_hours=35.0, is_active=True))
+        session.commit()
+    
     yield session
     
     session.close()
