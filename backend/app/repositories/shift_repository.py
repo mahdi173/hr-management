@@ -80,6 +80,75 @@ class ShiftRepository(BaseRepository[Shift]):
         return self.db.query(Shift).options(
             joinedload(Shift.assignments).joinedload(ShiftAssignment.employee)
         ).filter(Shift.id == shift_id).first()
+    
+    def get_shifts_for_date(
+        self,
+        schedule_id: int,
+        shift_date: date,
+        employee_id: Optional[int] = None,
+        role_id: Optional[int] = None
+    ) -> List[Shift]:
+        """Get all shifts for a specific schedule and date with filters (for day view)"""
+        query = self.db.query(Shift).options(
+            joinedload(Shift.assignments).joinedload(ShiftAssignment.employee)
+        ).filter(
+            and_(
+                Shift.schedule_id == schedule_id,
+                Shift.date == shift_date
+            )
+        )
+        
+        if employee_id:
+            query = query.join(ShiftAssignment).filter(ShiftAssignment.employee_id == employee_id)
+        
+        if role_id:
+            query = query.filter(Shift.required_role_id == role_id)
+        
+        return query.order_by(Shift.start_time).all()
+    
+    def get_shifts_for_week(
+        self,
+        schedule_id: int,
+        start_date: date,
+        end_date: date,
+        employee_id: Optional[int] = None,
+        role_id: Optional[int] = None
+    ) -> List[Shift]:
+        """Get all shifts for a week with filters (for week view)"""
+        query = self.db.query(Shift).options(
+            joinedload(Shift.assignments).joinedload(ShiftAssignment.employee)
+        ).filter(
+            and_(
+                Shift.schedule_id == schedule_id,
+                Shift.date >= start_date,
+                Shift.date <= end_date
+            )
+        )
+        
+        if employee_id:
+            query = query.join(ShiftAssignment).filter(ShiftAssignment.employee_id == employee_id)
+        
+        if role_id:
+            query = query.filter(Shift.required_role_id == role_id)
+        
+        return query.order_by(Shift.date, Shift.start_time).all()
+    
+    def get_shifts_for_month(
+        self,
+        schedule_id: int,
+        year: int,
+        month: int,
+        employee_id: Optional[int] = None,
+        role_id: Optional[int] = None
+    ) -> List[Shift]:
+        """Get all shifts for a month with filters (for month view)"""
+        from calendar import monthrange
+        
+        # Get first and last day of the month
+        first_day = date(year, month, 1)
+        last_day = date(year, month, monthrange(year, month)[1])
+        
+        return self.get_shifts_for_week(schedule_id, first_day, last_day, employee_id, role_id)
 
 
 class ShiftAssignmentRepository(BaseRepository[ShiftAssignment]):

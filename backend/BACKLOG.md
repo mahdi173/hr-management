@@ -48,21 +48,21 @@ All features follow the established pattern:
 - ✅ Input validation (email format, unique email, etc.)
 
 #### Technical Sub-tasks
-- [ ] **Models**: Create `Employee` model
+- [x] **Models**: Create `Employee` model
   - Fields: id, first_name, last_name, email (unique), phone, role_id, contract_type, is_active, created_at, updated_at
   - Relationships: role (ManyToOne), availabilities (OneToMany), absences (OneToMany), schedule_assignments (OneToMany)
-- [ ] **Schemas**: Create Pydantic schemas
+- [x] **Schemas**: Create Pydantic schemas
   - `EmployeeBase`, `EmployeeCreate`, `EmployeeUpdate`, `Employee` (response)
   - Validation: email format, phone format, required fields
-- [ ] **Repository**: Create `EmployeeRepository` extending `BaseRepository`
+- [x] **Repository**: Create `EmployeeRepository` extending `BaseRepository`
   - Methods: get_by_email(), get_active_employees(), soft_delete()
-- [ ] **Service**: Create `EmployeeService` extending `BaseService`
+- [x] **Service**: Create `EmployeeService` extending `BaseService`
   - Methods: create_employee(), update_employee(), delete_employee(), get_employee(), list_employees()
   - Business logic: check email uniqueness, validate role exists
-- [ ] **Controller**: Create `employee_controller.py`
+- [x] **Controller**: Create `employee_controller.py`
   - Endpoints: POST /employees, GET /employees, GET /employees/{id}, PUT /employees/{id}, DELETE /employees/{id}
   - Status codes: 201 (created), 200 (success), 404 (not found), 400 (validation error)
-- [ ] **Tests**: Unit and integration tests
+- [x] **Tests**: Unit and integration tests
   - Test CRUD operations, validation rules, edge cases
 
 **Dependencies:** None (foundational)
@@ -82,20 +82,20 @@ All features follow the established pattern:
 - ✅ Roles have descriptive names and optional permissions
 
 #### Technical Sub-tasks
-- [ ] **Models**: Create `Role` model
+- [x] **Models**: Create `Role` model
   - Fields: id, name (unique), description, permissions (JSON), is_active, created_at
   - Relationships: employees (OneToMany)
-- [ ] **Schemas**: Create Pydantic schemas
+- [x] **Schemas**: Create Pydantic schemas
   - `RoleBase`, `RoleCreate`, `RoleUpdate`, `Role` (response)
-- [ ] **Repository**: Create `RoleRepository`
+- [x] **Repository**: Create `RoleRepository`
   - Methods: get_by_name(), get_active_roles()
-- [ ] **Service**: Create `RoleService`
+- [x] **Service**: Create `RoleService`
   - Methods: create_role(), update_role(), list_roles()
   - Business logic: validate unique role names
-- [ ] **Controller**: Create `role_controller.py`
+- [x] **Controller**: Create `role_controller.py`
   - Endpoints: POST /roles, GET /roles, GET /roles/{id}, PUT /roles/{id}
-- [ ] **Migrations**: Create Alembic migration for Role and update Employee table
-- [ ] **Tests**: Test role creation, assignment, and retrieval
+- [x] **Migrations**: Create Alembic migration for Role and update Employee table
+- [x] **Tests**: Test role creation, assignment, and retrieval
 
 **Dependencies:** US-1.1 (Employee model needs role_id foreign key)
 
@@ -114,20 +114,20 @@ All features follow the established pattern:
 - ✅ Contract types include: Temps plein, Temps partiel, Stagiaire, CDD, CDI
 
 #### Technical Sub-tasks
-- [ ] **Models**: Create `ContractType` model
+- [x] **Models**: Create `ContractType` model
   - Fields: id, name (unique), description, weekly_hours (default), max_weekly_hours, is_active
   - Relationships: employees (OneToMany)
-- [ ] **Schemas**: Create Pydantic schemas
+- [x] **Schemas**: Create Pydantic schemas
   - `ContractTypeBase`, `ContractTypeCreate`, `ContractType` (response)
-- [ ] **Repository**: Create `ContractTypeRepository`
+- [x] **Repository**: Create `ContractTypeRepository`
   - Methods: get_by_name(), get_active_contract_types()
-- [ ] **Service**: Create `ContractTypeService`
+- [x] **Service**: Create `ContractTypeService`
   - Methods: create_contract_type(), list_contract_types()
   - Seed default contract types (CDI 35h, CDD, Temps partiel 20h, Stagiaire)
-- [ ] **Controller**: Create `contract_type_controller.py`
+- [x] **Controller**: Create `contract_type_controller.py`
   - Endpoints: GET /contract-types, POST /contract-types
-- [ ] **Migrations**: Create Alembic migration for ContractType and update Employee table
-- [ ] **Tests**: Test contract type creation and assignment
+- [x] **Migrations**: Create Alembic migration for ContractType and update Employee table
+- [x] **Tests**: Test contract type creation and assignment
 
 **Dependencies:** US-1.1 (Employee model update)
 
@@ -147,21 +147,21 @@ All features follow the established pattern:
 - ✅ Support multiple time slots per day
 
 #### Technical Sub-tasks
-- [ ] **Models**: Create `Availability` model
+- [x] **Models**: Create `Availability` model
   - Fields: id, employee_id (FK), day_of_week (0-6), start_time, end_time, is_recurring, specific_date, is_active
   - Relationships: employee (ManyToOne)
   - Constraints: check start_time < end_time, no overlapping slots for same employee
-- [ ] **Schemas**: Create Pydantic schemas
+- [x] **Schemas**: Create Pydantic schemas
   - `AvailabilityBase`, `AvailabilityCreate`, `AvailabilityUpdate`, `Availability` (response)
   - Validation: time format, day_of_week range (0-6), logical time order
-- [ ] **Repository**: Create `AvailabilityRepository`
+- [x] **Repository**: Create `AvailabilityRepository`
   - Methods: get_by_employee(), get_by_day(), check_overlap()
-- [ ] **Service**: Create `AvailabilityService`
+- [x] **Service**: Create `AvailabilityService`
   - Methods: create_availability(), update_availability(), delete_availability()
   - Business logic: validate no overlapping slots, check employee exists
-- [ ] **Controller**: Create `availability_controller.py`
+- [x] **Controller**: Create `availability_controller.py`
   - Endpoints: POST /employees/{id}/availabilities, GET /employees/{id}/availabilities, PUT /availabilities/{id}, DELETE /availabilities/{id}
-- [ ] **Tests**: Test availability creation, overlap detection, retrieval
+- [x] **Tests**: Test availability creation, overlap detection, retrieval
 
 **Dependencies:** US-1.1 (Employee model must exist)
 
@@ -181,23 +181,23 @@ All features follow the established pattern:
 - ✅ Absences block scheduling during those dates
 
 #### Technical Sub-tasks
-- [ ] **Models**: Create `AbsenceType` and `Absence` models
+- [x] **Models**: Create `AbsenceType` and `Absence` models
   - `AbsenceType`: id, name (unique), description, requires_approval, is_paid
   - `Absence`: id, employee_id (FK), absence_type_id (FK), start_date, end_date, reason, status (pending/approved/rejected), approved_by_id (FK to Employee), created_at, updated_at
   - Relationships: employee (ManyToOne), absence_type (ManyToOne), approved_by (ManyToOne to Employee)
-- [ ] **Schemas**: Create Pydantic schemas
+- [x] **Schemas**: Create Pydantic schemas
   - `AbsenceTypeBase`, `AbsenceType` (response)
   - `AbsenceBase`, `AbsenceCreate`, `AbsenceUpdate`, `Absence` (response)
   - Validation: start_date <= end_date, valid status enum
-- [ ] **Repository**: Create `AbsenceRepository`
+- [x] **Repository**: Create `AbsenceRepository`
   - Methods: get_by_employee(), get_by_status(), get_by_date_range(), get_pending_approvals()
-- [ ] **Service**: Create `AbsenceService`
+- [x] **Service**: Create `AbsenceService`
   - Methods: create_absence_request(), approve_absence(), reject_absence(), list_absences()
   - Business logic: validate date range, check employee exists, send notifications (future)
-- [ ] **Controller**: Create `absence_controller.py`
+- [x] **Controller**: Create `absence_controller.py`
   - Endpoints: POST /absences, GET /absences, GET /absences/{id}, PUT /absences/{id}/approve, PUT /absences/{id}/reject
-- [ ] **Migrations**: Create Alembic migrations for AbsenceType and Absence tables
-- [ ] **Tests**: Test absence creation, approval workflow, date validation
+- [x] **Migrations**: Create Alembic migrations for AbsenceType and Absence tables
+- [x] **Tests**: Test absence creation, approval workflow, date validation
 
 **Dependencies:** US-1.1 (Employee model), US-1.2 (Manager role for approval)
 
@@ -219,20 +219,20 @@ All features follow the established pattern:
 - ✅ List all schedules with filtering by date range
 
 #### Technical Sub-tasks
-- [ ] **Models**: Create `Schedule` model
+- [x] **Models**: Create `Schedule` model
   - Fields: id, name, description, start_date, end_date, created_by_id (FK to Employee), status (draft/published/archived), created_at, updated_at
   - Relationships: created_by (ManyToOne to Employee), shifts (OneToMany)
-- [ ] **Schemas**: Create Pydantic schemas
+- [x] **Schemas**: Create Pydantic schemas
   - `ScheduleBase`, `ScheduleCreate`, `ScheduleUpdate`, `Schedule` (response)
   - Validation: start_date <= end_date, valid status
-- [ ] **Repository**: Create `ScheduleRepository`
+- [x] **Repository**: Create `ScheduleRepository`
   - Methods: get_by_date_range(), get_by_status(), get_by_created_by()
-- [ ] **Service**: Create `ScheduleService`
+- [x] **Service**: Create `ScheduleService`
   - Methods: create_schedule(), update_schedule(), delete_schedule(), publish_schedule(), archive_schedule()
   - Business logic: validate dates, check creator permissions
-- [ ] **Controller**: Create `schedule_controller.py`
+- [x] **Controller**: Create `schedule_controller.py`
   - Endpoints: POST /schedules, GET /schedules, GET /schedules/{id}, PUT /schedules/{id}, DELETE /schedules/{id}
-- [ ] **Tests**: Test schedule CRUD operations, date validation, status transitions
+- [x] **Tests**: Test schedule CRUD operations, date validation, status transitions
 
 **Dependencies:** US-1.1 (Employee model for created_by)
 
@@ -253,22 +253,22 @@ All features follow the established pattern:
 - ✅ Track shift type (regular, overtime)
 
 #### Technical Sub-tasks
-- [ ] **Models**: Create `Shift` and `ShiftAssignment` models
+- [x] **Models**: Create `Shift` and `ShiftAssignment` models
   - `Shift`: id, schedule_id (FK), date, start_time, end_time, required_role_id (FK), min_employees, max_employees, notes, created_at, updated_at
   - `ShiftAssignment`: id, shift_id (FK), employee_id (FK), status (assigned/confirmed/completed), assignment_type (regular/overtime), created_at
   - Relationships: shift.schedule (ManyToOne), shift.assignments (OneToMany), shift.required_role (ManyToOne to Role)
-- [ ] **Schemas**: Create Pydantic schemas
+- [x] **Schemas**: Create Pydantic schemas
   - `ShiftBase`, `ShiftCreate`, `ShiftUpdate`, `Shift` (response with assignments)
   - `ShiftAssignmentBase`, `ShiftAssignmentCreate`, `ShiftAssignment` (response)
   - Validation: time order, employee capacity limits
-- [ ] **Repository**: Create `ShiftRepository` and `ShiftAssignmentRepository`
+- [x] **Repository**: Create `ShiftRepository` and `ShiftAssignmentRepository`
   - Methods: get_by_schedule(), get_by_date_range(), get_by_employee(), check_employee_conflict()
-- [ ] **Service**: Create `ShiftService`
+- [x] **Service**: Create `ShiftService`
   - Methods: create_shift(), assign_employee(), remove_employee(), update_shift()
   - Business logic: validate employee availability, check role match, prevent double-booking
-- [ ] **Controller**: Create `shift_controller.py`
+- [x] **Controller**: Create `shift_controller.py`
   - Endpoints: POST /schedules/{id}/shifts, GET /shifts, POST /shifts/{id}/assign, DELETE /shifts/{id}/assign/{employee_id}
-- [ ] **Tests**: Test shift creation, employee assignment, conflict detection
+- [x] **Tests**: Test shift creation, employee assignment, conflict detection
 
 **Dependencies:** US-1.6 (Schedule model), US-1.1 (Employee), US-1.2 (Role), US-1.4 (Availability check)
 
@@ -288,19 +288,19 @@ All features follow the established pattern:
 - ✅ Generate hours summary per employee per week/month
 
 #### Technical Sub-tasks
-- [ ] **Models**: Extend `ShiftAssignment` model
+- [x] **Models**: Extend `ShiftAssignment` model
   - Add computed fields: duration_hours (calculated from shift times)
   - Add field: is_overtime (boolean)
-- [ ] **Service**: Extend `ShiftService` with hour calculation
+- [x] **Service**: Extend `ShiftService` with hour calculation
   - Methods: calculate_shift_duration(), calculate_weekly_hours(), classify_hours_type()
   - Business logic: compare against contract_type.weekly_hours, flag overtime
-- [ ] **Repository**: Extend `ShiftAssignmentRepository`
+- [x] **Repository**: Extend `ShiftAssignmentRepository`
   - Methods: get_hours_by_employee_and_period(), get_overtime_shifts()
-- [ ] **Controller**: Add endpoints to `shift_controller.py`
+- [x] **Controller**: Add endpoints to `shift_controller.py`
   - Endpoints: GET /employees/{id}/hours?start_date=&end_date=, GET /employees/{id}/overtime
-- [ ] **Schemas**: Create summary schemas
+- [x] **Schemas**: Create summary schemas
   - `HoursSummary`: employee_id, period_start, period_end, regular_hours, overtime_hours, total_hours
-- [ ] **Tests**: Test hour calculations, overtime detection, weekly summaries
+- [x] **Tests**: Test hour calculations, overtime detection, weekly summaries
 
 **Dependencies:** US-1.7 (Shift and ShiftAssignment), US-1.3 (ContractType for limits)
 
@@ -320,19 +320,19 @@ All features follow the established pattern:
 - ✅ Export schedule data in structured format (JSON)
 
 #### Technical Sub-tasks
-- [ ] **Service**: Extend `ScheduleService` with view generators
+- [x] **Service**: Extend `ScheduleService` with view generators
   - Methods: get_day_view(), get_week_view(), get_month_view()
   - Business logic: aggregate shifts, group by date, include employee details
-- [ ] **Repository**: Extend `ShiftRepository` with efficient queries
+- [x] **Repository**: Extend `ShiftRepository` with efficient queries
   - Methods: get_shifts_for_date(), get_shifts_for_week(), get_shifts_for_month()
   - Optimization: eager loading of related data (employees, roles)
-- [ ] **Controller**: Add view endpoints to `schedule_controller.py`
+- [x] **Controller**: Add view endpoints to `schedule_controller.py`
   - Endpoints: GET /schedules/{id}/day-view?date=, GET /schedules/{id}/week-view?start_date=, GET /schedules/{id}/month-view?year=&month=
-- [ ] **Schemas**: Create view response schemas
+- [x] **Schemas**: Create view response schemas
   - `DayView`: date, shifts (list of shifts with employees)
   - `WeekView`: start_date, end_date, days (list of day views)
   - `MonthView`: year, month, weeks (list of week views)
-- [ ] **Tests**: Test view generation, date filtering, data aggregation
+- [x] **Tests**: Test view generation, date filtering, data aggregation
 
 **Dependencies:** US-1.6 (Schedule), US-1.7 (Shifts), US-1.1 (Employee data)
 
