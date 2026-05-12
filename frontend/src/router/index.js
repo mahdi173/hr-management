@@ -7,11 +7,11 @@ const routes = [
     name: "Dashboard",
     component: DashboardView,
   },
-  //   {
-  //     path: "/plannings",
-  //     name: "Plannings",
-  //     component: () => import("../components/PlanningsView.vue"),
-  //   },
+  {
+    path: "/plannings",
+    name: "Plannings",
+    component: () => import("../components/PlanningsView.vue"),
+  },
   {
     path: "/equipe",
     name: "Equipe",
