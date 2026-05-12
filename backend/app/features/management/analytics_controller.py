@@ -8,6 +8,8 @@ from datetime import date
 from ...database import get_db
 from ..shifts.shared.analytics_service import AnalyticsService
 from ..shifts.shared.coverage_alert_service import CoverageAlertService
+from ..shifts.shared.insight_service import InsightService
+from ..shifts.shared.optimization_service import OptimizationService
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
@@ -42,3 +44,24 @@ def refresh_coverage_alerts(
     service = CoverageAlertService(db)
     count = service.scan_for_coverage_gaps(schedule_id)
     return {"status": "success", "alerts_created": count}
+
+
+@router.post("/refresh-insights")
+def refresh_insights(
+    db: Session = Depends(get_db)
+):
+    """Run proactive insight detection and create alerts"""
+    service = InsightService(db)
+    count = service.generate_all_insights()
+    return {"status": "success", "insights_created": count}
+
+
+@router.get("/rebalancing-suggestions")
+def get_rebalancing_suggestions(
+    start_date: date = Query(...),
+    end_date: date = Query(...),
+    db: Session = Depends(get_db)
+):
+    """Get suggestions to rebalance workload between employees"""
+    service = OptimizationService(db)
+    return service.get_rebalancing_suggestions(start_date, end_date)

@@ -526,20 +526,12 @@ All features follow the established pattern:
 - ✅ Prioritize alerts by urgency and impact
 
 #### Technical Sub-tasks
-- [ ] **Service**: Create `InsightService`
-  - Methods: detect_completion_risk(), detect_underutilization_pattern(), detect_burnout_risk(), generate_insights()
-  - Heuristics: completion < 70% within 3 days of start, employee at < 60% utilization for 4+ weeks, 7+ consecutive days scheduled
-- [ ] **Models**: Extend `Alert` model with insight-specific fields
-  - Add field: insight_type (completion_risk/underutilization/burnout/optimization)
-  - Add field: recommended_action (text suggestion)
-- [ ] **Service**: Create scheduled analysis job structure (async task placeholder)
-  - Method: run_periodic_insights() → generate insights for all active schedules
-  - Note: Actual scheduling (Celery/APScheduler) in future iteration
-- [ ] **Controller**: Add insights endpoints to `alert_controller.py`
-  - Endpoints: GET /insights, GET /insights/schedule/{id}
-- [ ] **Schemas**: Create insight schemas
-  - `Insight`: type, severity, title, description, recommended_action, affected_entities (employees/shifts)
-- [ ] **Tests**: Test pattern detection, alert generation, action recommendations
+- [x] **Service**: Create `InsightService`
+- [x] **Models**: Use `Alert` model with insight fields
+- [x] **Service**: Create scheduled analysis job structure (MVP)
+- [x] **Controller**: Add insights endpoints to `analytics_controller.py`
+- [x] **Schemas**: Create insight schemas
+- [ ] **Tests**: Test risk detection, pattern recognition, and urgency prioritization
 
 **Dependencies:** US-2.3 (Alert system), US-2.4 (Workload analysis), US-2.5 (Schedule completion)
 
@@ -559,22 +551,10 @@ All features follow the established pattern:
 - ✅ Allow applying suggestions with one action
 
 #### Technical Sub-tasks
-- [ ] **Service**: Create `RebalancingService`
-  - Methods: detect_imbalance(), generate_rebalancing_plan(), apply_rebalancing()
-  - Algorithm: calculate variance in utilization, identify swappable shifts, simulate reassignments
-  - Business logic: validate all suggestions against conflicts and compliance
-- [ ] **Schemas**: Create rebalancing schemas
-  - `RebalancingProposal`: schedule_id, current_variance, proposed_variance, shift_changes (list of ShiftChange)
-  - `ShiftChange`: shift_id, current_employee_id, proposed_employee_id, reason
-- [ ] **Controller**: Add endpoints to `recommendation_controller.py`
-  - Endpoints: GET /schedules/{id}/rebalancing-proposals, POST /schedules/{id}/apply-rebalancing
-- [ ] **Service**: Integration with conflict detection
-  - Validate each proposed change doesn't violate constraints
-- [ ] **Algorithm**: Implement simple rebalancing heuristic
-  - Identify overutilized (>110%) and underutilized (<90%) employees
-  - Find shifts from overutilized that can move to underutilized
-  - Prioritize shifts with fewer dependencies
-- [ ] **Tests**: Test imbalance detection, proposal generation, conflict-free validation
+- [x] **Service**: Create `OptimizationService`
+- [x] **Schemas**: Create rebalancing suggestion schemas
+- [x] **Controller**: Add endpoints to `analytics_controller.py`
+- [ ] **Tests**: Test suggestion logic, conflict prevention during swap, impact calculation
 
 **Dependencies:** US-2.4 (Workload analysis), US-2.1 (Conflict detection), US-1.7 (Shift reassignment)
 
