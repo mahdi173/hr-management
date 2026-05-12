@@ -17,16 +17,16 @@ const routes = [
     name: "Equipe",
     component: () => import("../components/EquipeView.vue"),
   },
-  //   {
-  //     path: "/absences",
-  //     name: "Absences",
-  //     component: () => import("../components/AbsencesView.vue"),
-  //   },
-  //   {
-  //     path: "/parametres",
-  //     name: "Parametres",
-  //     component: () => import("../components/ParametresView.vue"),
-  //   },
+  {
+    path: "/absences",
+    name: "Absences",
+    component: () => import("../components/AbsencesView.vue"),
+  },
+  {
+    path: "/parametres",
+    name: "Parametres",
+    component: () => import("../components/ParametresView.vue"),
+  },
 ];
 
 const router = createRouter({

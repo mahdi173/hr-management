@@ -17,9 +17,16 @@
 
       <v-spacer></v-spacer>
 
-      <v-text-field hide-details prepend-inner-icon="mdi-magnify" placeholder="Rechercher un employé, un planning..."
-        variant="solo-filled" flat density="compact" class="mx-4 d-none d-sm-block" style="max-width: 350px;"
-        bg-color="#F3F4F6" rounded="lg"></v-text-field>
+      <v-autocomplete v-model="searchSelection" v-model:search="searchQuery" :items="globalSearchResults"
+        item-title="title" item-value="id" hide-details prepend-inner-icon="mdi-magnify"
+        placeholder="Rechercher un employé, un shift..." variant="solo-filled" flat density="compact"
+        class="mx-4 d-none d-sm-block" style="max-width: 350px;" bg-color="#F3F4F6" rounded="lg" return-object
+        no-data-text="Aucun résultat" @update:modelValue="handleSearchSelect">
+        <template v-slot:item="{ props, item }">
+          <v-list-item v-bind="props" :prepend-icon="item?.raw?.icon || 'mdi-magnify'"
+            :subtitle="item?.raw?.subtitle || ''"></v-list-item>
+        </template>
+      </v-autocomplete>
 
       <v-btn icon color="grey-darken-2" class="mr-3">
         <v-badge color="error" content="3" dot>
@@ -71,7 +78,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useEmployeeStore } from './stores/employeeStore'
+import { useScheduleStore } from './stores/scheduleStore'
+
+const router = useRouter()
+const employeeStore = useEmployeeStore()
+const scheduleStore = useScheduleStore()
 
 const drawer = ref(true)
 
@@ -82,6 +96,51 @@ const menuItems = ref([
   { title: 'Absences', icon: 'mdi-palm-tree', path: '/absences' },
   { title: 'Paramètres', icon: 'mdi-cog-outline', path: '/parametres' },
 ])
+
+const searchQuery = ref('')
+const searchSelection = ref(null)
+
+const globalSearchResults = computed(() => {
+  const results = []
+
+  employeeStore.employees.forEach(emp => {
+    results.push({
+      id: `emp_${emp.id}`,
+      title: `${emp.firstName} ${emp.lastName}`,
+      subtitle: `Employé • ${emp.email}`,
+      icon: 'mdi-account-outline',
+      route: '/equipe'
+    })
+  })
+
+  scheduleStore.shifts.forEach(shift => {
+    results.push({
+      id: `shift_${shift.id}`,
+      title: shift.employeeName ? `Shift: ${shift.employeeName}` : 'Shift: Non assigné',
+      subtitle: `Planning • ${shift.date} • ${shift.roleName}`,
+      icon: 'mdi-calendar-clock-outline',
+      route: '/plannings'
+    })
+  })
+
+  return results
+})
+
+const handleSearchSelect = (selectedItem) => {
+  if (selectedItem && selectedItem.route) {
+    router.push(selectedItem.route)
+
+    setTimeout(() => {
+      searchSelection.value = null
+      searchQuery.value = ''
+    }, 150)
+  }
+}
+
+onMounted(async () => {
+  if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
+  if (scheduleStore.shifts.length === 0) await scheduleStore.fetchWeeklyShifts()
+})
 </script>
 
 <style>
