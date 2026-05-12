@@ -1,20 +1,22 @@
 <template>
     <div class="equipe-view">
-        <div class="d-flex flex-column flex-md-row justify-space-between align-md-center mb-6 mt-2">
-            <div>
+        <div class="d-flex flex-column flex-lg-row justify-space-between align-lg-center mb-6 mt-2">
+            <div class="mb-4 mb-lg-0">
                 <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">Équipe</h1>
                 <p class="text-body-1 text-grey-darken-1">Gérez vos collaborateurs et leurs contrats.</p>
             </div>
-            <div class="mt-4 mt-md-0 d-flex align-center">
+
+            <div class="d-flex flex-column flex-sm-row align-stretch align-sm-center gap-3 w-100"
+                style="max-width: 600px;">
                 <v-switch v-model="showInactive" label="Afficher les inactifs" color="primary" hide-details
-                    density="compact" class="mr-4 text-body-2 font-weight-medium"></v-switch>
+                    density="compact" class="text-body-2 font-weight-medium flex-shrink-0"></v-switch>
 
                 <v-text-field v-model="search" prepend-inner-icon="mdi-magnify" placeholder="Rechercher un membre..."
                     variant="outlined" density="compact" hide-details bg-color="white" rounded="lg"
-                    style="min-width: 280px;"></v-text-field>
+                    class="flex-grow-1"></v-text-field>
 
-                <v-btn color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus"
-                    class="ml-4 px-5 font-weight-bold" @click="openNewModal">
+                <v-btn color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus" height="40"
+                    class="px-5 font-weight-bold flex-shrink-0" @click="openNewModal">
                     Ajouter
                 </v-btn>
             </div>
@@ -130,7 +132,7 @@
                 <h3 class="text-h6 font-weight-bold mb-2">Supprimer ce collaborateur ?</h3>
                 <p class="text-body-2 text-grey-darken-1 mb-6 px-4">
                     Êtes-vous sûr de vouloir supprimer <strong>{{ itemToDelete?.firstName }} {{ itemToDelete?.lastName
-                    }}</strong> ? Cette action retirera également cette personne des plannings futurs.
+                        }}</strong> ? Cette action retirera également cette personne des plannings futurs.
                 </p>
                 <div class="d-flex justify-center mb-2">
                     <v-btn variant="text" color="grey-darken-2" class="mr-3 font-weight-medium" rounded="lg"
@@ -140,6 +142,14 @@
                 </div>
             </v-card>
         </v-dialog>
+
+        <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" location="bottom right"
+            rounded="pill">
+            <div class="d-flex align-center font-weight-medium">
+                <v-icon size="small" class="mr-2">{{ snackbar.icon }}</v-icon>
+                {{ snackbar.text }}
+            </div>
+        </v-snackbar>
     </div>
 </template>
 
@@ -154,14 +164,13 @@ const roleStore = useRoleStore()
 const contractStore = useContractStore()
 
 const search = ref('')
-
 const showInactive = ref(false)
-
 const dialog = ref(false)
 const dialogDelete = ref(false)
-
 const editedIndex = ref(-1)
 const itemToDelete = ref(null)
+
+const snackbar = ref({ show: false, text: '', color: 'success', icon: 'mdi-check-circle' })
 
 const defaultItem = {
     firstName: '',
@@ -192,6 +201,22 @@ const formTitle = computed(() => {
     return editedIndex.value === -1 ? 'Nouveau collaborateur' : 'Modifier collaborateur'
 })
 
+const displayedEmployees = computed(() => {
+    if (showInactive.value) {
+        return employeeStore.employees;
+    }
+    return employeeStore.employees.filter(emp => emp.status !== 'Inactif');
+})
+
+const showNotification = (text, type = 'success') => {
+    snackbar.value = {
+        show: true,
+        text,
+        color: type,
+        icon: type === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'
+    }
+}
+
 const openNewModal = () => {
     editedIndex.value = -1
     editedItem.value = { ...defaultItem }
@@ -212,11 +237,13 @@ const closeModal = () => {
     }, 300)
 }
 
-const saveItem = () => {
+const saveItem = async () => {
     if (editedIndex.value > -1) {
-        employeeStore.updateEmployee(editedIndex.value, editedItem.value)
+        await employeeStore.updateEmployee(editedIndex.value, editedItem.value)
+        showNotification('Collaborateur modifié avec succès')
     } else {
-        employeeStore.addEmployee(editedItem.value)
+        await employeeStore.addEmployee(editedItem.value)
+        showNotification('Collaborateur ajouté avec succès')
     }
     closeModal()
 }
@@ -229,6 +256,7 @@ const confirmDelete = (item) => {
 const deleteItemConfirm = async () => {
     if (itemToDelete.value) {
         await employeeStore.deleteEmployee(itemToDelete.value.id)
+        showNotification('Collaborateur supprimé', 'error')
     }
     dialogDelete.value = false
     itemToDelete.value = null
@@ -239,16 +267,13 @@ onMounted(async () => {
     if (contractStore.contracts.length === 0) await contractStore.fetchContracts()
     if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
 })
-
-const displayedEmployees = computed(() => {
-    if (showInactive.value) {
-        return employeeStore.employees;
-    }
-    return employeeStore.employees.filter(emp => emp.status !== 'Inactif');
-})
 </script>
 
 <style scoped>
+.gap-3 {
+    gap: 0.75rem;
+}
+
 :deep(.v-data-table-header__content) {
     font-weight: 700;
     color: #64748B;
