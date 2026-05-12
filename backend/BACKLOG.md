@@ -360,18 +360,11 @@ All features follow the established pattern:
 - ✅ Display clear conflict messages
 
 #### Technical Sub-tasks
-- [ ] **Service**: Create `ConflictDetectionService`
-  - Methods: check_shift_conflicts(), check_availability_conflicts(), check_absence_conflicts()
-  - Business logic: time overlap calculation, availability matching, absence blocking
-- [ ] **Repository**: Create helper queries in repositories
-  - Methods: get_overlapping_shifts(), get_availability_for_date_time(), get_absences_for_date_range()
-- [ ] **Service**: Extend `ShiftService` with conflict checking
-  - Integrate conflict detection before saving assignments
-  - Return detailed conflict information in exceptions
-- [ ] **Schemas**: Create conflict response schemas
-  - `ConflictError`: type (overlap/availability/absence), message, conflicting_shift_ids, employee_id
-- [ ] **Controller**: Update `shift_controller.py` error handling
-  - Return 409 Conflict status with detailed error information
+- [x] **Service**: Create `ConflictDetectionService`
+- [x] **Repository**: Create helper queries in repositories
+- [x] **Service**: Extend `ShiftService` with conflict checking
+- [x] **Schemas**: Create conflict response schemas
+- [x] **Controller**: Update `shift_controller.py` error handling
 - [ ] **Tests**: Test all conflict scenarios, edge cases (same time boundaries, etc.)
 
 **Dependencies:** US-1.7 (Shifts), US-1.4 (Availability), US-1.5 (Absences)
@@ -392,20 +385,12 @@ All features follow the established pattern:
 - ✅ Track violation history
 
 #### Technical Sub-tasks
-- [ ] **Models**: Create `ComplianceRule` and `ComplianceViolation` models
-  - `ComplianceRule`: id, name, rule_type (max_daily_hours/max_weekly_hours/min_rest_hours), threshold_value, is_blocking, is_active
-  - `ComplianceViolation`: id, shift_assignment_id (FK), rule_id (FK), violation_date, severity (warning/error), message, resolved
-- [ ] **Service**: Create `ComplianceService`
-  - Methods: check_daily_hours(), check_weekly_hours(), check_rest_period(), validate_assignment()
-  - Business logic: calculate hours, compare to rules, create violations
-- [ ] **Repository**: Create `ComplianceRuleRepository` and `ComplianceViolationRepository`
-  - Methods: get_active_rules(), log_violation(), get_unresolved_violations()
-- [ ] **Service**: Integrate with `ShiftService`
-  - Call compliance validation before finalizing assignments
-  - Return warnings and errors separately
-- [ ] **Controller**: Update assignment endpoints
-  - Return compliance warnings in response (200 with warnings or 400 with errors)
-- [ ] **Migrations**: Create tables for compliance rules and violations
+- [x] **Models**: Create `ComplianceRule` and `ComplianceViolation` models
+- [x] **Service**: Create `ComplianceService`
+- [x] **Repository**: Create `ComplianceRuleRepository` and `ComplianceViolationRepository`
+- [x] **Service**: Integrate with `ShiftService`
+- [x] **Controller**: Update assignment endpoints
+- [x] **Migrations**: Create tables for compliance rules and violations
 - [ ] **Tests**: Test all compliance rules, threshold validation, blocking vs. warning behavior
 
 **Dependencies:** US-1.8 (Hours tracking), US-1.7 (Shift assignments)
@@ -427,22 +412,15 @@ All features follow the established pattern:
 - ✅ Filter alerts by severity (info/warning/error)
 
 #### Technical Sub-tasks
-- [ ] **Models**: Create `Alert` model
-  - Fields: id, alert_type (conflict/compliance/unassigned/other), severity (info/warning/error), title, message, related_shift_id, related_employee_id, is_resolved, resolved_at, created_at
-  - Relationships: related_shift (ManyToOne), related_employee (ManyToOne)
-- [ ] **Service**: Create `AlertService`
-  - Methods: create_alert(), resolve_alert(), get_active_alerts(), get_alerts_by_type()
-  - Business logic: auto-generate from conflicts and violations
-- [ ] **Repository**: Create `AlertRepository`
-  - Methods: get_unresolved(), get_by_severity(), get_by_employee()
-- [ ] **Service**: Integrate with existing services
-  - `ConflictDetectionService` → create conflict alerts
-  - `ComplianceService` → create compliance alerts
-  - `ShiftService` → create unassigned shift alerts
-- [ ] **Controller**: Create `alert_controller.py`
-  - Endpoints: GET /alerts, GET /alerts/{id}, PUT /alerts/{id}/resolve
-- [ ] **Schemas**: Create Pydantic schemas
-  - `AlertBase`, `Alert` (response)
+- [x] **Models**: Create `Alert` model
+- [x] **Service**: Create `AlertService`
+- [x] **Repository**: Create `AlertRepository`
+- [x] **Service**: Integrate with existing services
+  - [x] `ConflictDetectionService` → create conflict alerts
+  - [x] `ComplianceService` → create compliance alerts
+  - [x] `ShiftService` → create unassigned shift alerts
+- [x] **Controller**: Create `alert_controller.py`
+- [x] **Schemas**: Create Pydantic schemas
 - [ ] **Tests**: Test alert creation, resolution, filtering
 
 **Dependencies:** US-2.1 (Conflict detection), US-2.2 (Compliance), US-1.7 (Shifts)
@@ -465,17 +443,10 @@ All features follow the established pattern:
 - ✅ Generate workload reports (JSON/structured data)
 
 #### Technical Sub-tasks
-- [ ] **Service**: Create `WorkloadAnalysisService`
-  - Methods: calculate_workload(), get_underutilized(), get_overutilized(), compare_workloads()
-  - Business logic: aggregate hours, compare to contract hours, calculate utilization percentage
-- [ ] **Repository**: Extend `ShiftAssignmentRepository`
-  - Methods: get_total_hours_by_employee(), get_workload_summary()
-  - Optimization: efficient aggregation queries
-- [ ] **Schemas**: Create analysis schemas
-  - `WorkloadSummary`: employee_id, employee_name, contract_hours, scheduled_hours, utilization_percentage, status (underutilized/balanced/overutilized)
-  - `TeamWorkloadReport`: period_start, period_end, employees (list of WorkloadSummary)
-- [ ] **Controller**: Create `analytics_controller.py`
-  - Endpoints: GET /analytics/workload?start_date=&end_date=, GET /analytics/workload/employee/{id}
+- [x] **Service**: Create `WorkloadAnalysisService`
+- [x] **Repository**: Extend `ShiftAssignmentRepository`
+- [x] **Schemas**: Create analysis schemas
+- [x] **Controller**: Create `analytics_controller.py`
 - [ ] **Tests**: Test workload calculations, status classification, report generation
 
 **Dependencies:** US-1.8 (Hours tracking), US-1.3 (Contract types with hour limits)
@@ -496,16 +467,10 @@ All features follow the established pattern:
 - ✅ Dashboard view with schedule health metrics
 
 #### Technical Sub-tasks
-- [ ] **Service**: Extend `ScheduleService` with completion analysis
-  - Methods: calculate_completion_rate(), get_unassigned_shifts(), get_coverage_gaps()
-  - Business logic: count assigned vs. required positions
-- [ ] **Schemas**: Create completion schemas
-  - `ScheduleCompletion`: schedule_id, total_shifts, fully_assigned, partially_assigned, unassigned, completion_percentage
-  - `CoverageGap`: date, shift_id, required_employees, assigned_employees, missing_count, required_role
-- [ ] **Controller**: Add endpoints to `schedule_controller.py`
-  - Endpoints: GET /schedules/{id}/completion, GET /schedules/{id}/gaps
+- [x] **Service**: Extend `ScheduleService` with completion analysis
+- [x] **Schemas**: Create completion schemas
+- [x] **Controller**: Add endpoints to `schedule_controller.py`
 - [ ] **Service**: Add dashboard aggregation
-  - Method: get_schedule_dashboard() → overall metrics
 - [ ] **Tests**: Test completion calculations, gap identification
 
 **Dependencies:** US-1.7 (Shifts with min/max employee counts)
@@ -534,25 +499,13 @@ All features follow the established pattern:
 - ✅ Exclude employees with conflicts or absences
 
 #### Technical Sub-tasks
-- [ ] **External Dependencies**: Add ML library to requirements
-  - `scikit-learn==1.4.0` or lightweight alternative
-  - `numpy==1.26.0` for calculations
-- [ ] **Service**: Create `RecommendationService`
-  - Methods: recommend_for_shift(), score_employee_fit(), explain_recommendation()
-  - Scoring factors: availability_match (weight: 0.3), role_match (0.3), workload_balance (0.2), preference_history (0.2)
-  - Business logic: normalize scores, rank by total score, filter conflicts
-- [ ] **Models**: Create `AssignmentPreference` model (for learning)
-  - Fields: id, employee_id, shift_type, preference_score (historical data from successful assignments)
-- [ ] **Repository**: Create `RecommendationRepository`
-  - Methods: get_assignment_history(), get_employee_preferences()
-- [ ] **Schemas**: Create recommendation schemas
-  - `EmployeeRecommendation`: employee_id, employee_name, score, confidence, explanation, conflicts (list)
-  - `ShiftRecommendations`: shift_id, recommendations (list of EmployeeRecommendation)
-- [ ] **Controller**: Create `recommendation_controller.py`
-  - Endpoints: GET /shifts/{id}/recommendations, POST /recommendations/feedback
-- [ ] **Algorithm**: Implement scoring function
-  - Weighted sum of normalized factors
-  - Conflict filtering (zero score if any hard conflict)
+- [x] **External Dependencies**: Add ML library to requirements
+- [x] **Service**: Create `RecommendationService`
+- [x] **Models**: Create `AssignmentPreference` model
+- [x] **Repository**: Create `RecommendationRepository`
+- [x] **Schemas**: Create recommendation schemas
+- [x] **Controller**: Create `recommendation_controller.py`
+- [x] **Algorithm**: Implement scoring function
 - [ ] **Tests**: Test recommendation generation, scoring accuracy, conflict exclusion
 
 **Dependencies:** US-1.7 (Shifts), US-1.4 (Availability), US-2.1 (Conflict detection), US-2.4 (Workload)

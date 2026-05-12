@@ -29,11 +29,29 @@ class AbsenceRepository(BaseRepository[Absence]):
         ).offset(skip).limit(limit).all()
 
     def get_by_date_range(self, start_date: date, end_date: date) -> List[Absence]:
-        """Get absences that overlap with a date range"""
+        """Get absences that overlap with a date range (all employees)"""
         return self.db.query(self.model).filter(
-            self.model.start_date <= end_date,
-            self.model.end_date >= start_date,
-            self.model.status == AbsenceStatus.APPROVED
+            and_(
+                self.model.start_date <= end_date,
+                self.model.end_date >= start_date,
+                self.model.status == AbsenceStatus.APPROVED
+            )
+        ).all()
+
+    def get_by_employee_and_date_range(
+        self, 
+        employee_id: int, 
+        start_date: date, 
+        end_date: date
+    ) -> List[Absence]:
+        """Get approved absences for a specific employee within a date range"""
+        return self.db.query(self.model).filter(
+            and_(
+                self.model.employee_id == employee_id,
+                self.model.start_date <= end_date,
+                self.model.end_date >= start_date,
+                self.model.status == AbsenceStatus.APPROVED
+            )
         ).all()
 
     def get_pending_approvals(self, skip: int = 0, limit: int = 100) -> List[Absence]:

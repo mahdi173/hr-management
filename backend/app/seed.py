@@ -3,7 +3,8 @@ Database seeding script - creates initial data with existence checks.
 Seeds are idempotent - safe to run multiple times.
 """
 from sqlalchemy.orm import Session
-from app.models import Role, ContractType, User, AbsenceType
+from app.models import Role, ContractType, User, AbsenceType, ComplianceRule
+from app.models.compliance import RuleType
 from app.database import SessionLocal
 import logging
 
@@ -164,6 +165,44 @@ def seed_absence_types(db: Session) -> None:
             logger.info(f"✓ Created absence type: {type_data['name']}")
     
     db.commit()
+    
+
+def seed_compliance_rules(db: Session) -> None:
+    """Seed default compliance rules"""
+    default_rules = [
+        {
+            "name": "Max Daily Working Hours",
+            "rule_type": RuleType.MAX_DAILY_HOURS,
+            "threshold_value": 10.0,
+            "is_blocking": True,
+            "is_active": True
+        },
+        {
+            "name": "Max Weekly Working Hours",
+            "rule_type": RuleType.MAX_WEEKLY_HOURS,
+            "threshold_value": 48.0,
+            "is_blocking": True,
+            "is_active": True
+        },
+        {
+            "name": "Minimum Rest Period",
+            "rule_type": RuleType.MIN_REST_HOURS,
+            "threshold_value": 11.0,
+            "is_blocking": False,
+            "is_active": True
+        }
+    ]
+    
+    for rule_data in default_rules:
+        existing = db.query(ComplianceRule).filter(
+            ComplianceRule.name == rule_data["name"]
+        ).first()
+        if not existing:
+            rule = ComplianceRule(**rule_data)
+            db.add(rule)
+            logger.info(f"✓ Created compliance rule: {rule_data['name']}")
+    
+    db.commit()
 
 
 def seed_database() -> None:
@@ -179,6 +218,7 @@ def seed_database() -> None:
         seed_roles(db)
         seed_contract_types(db)
         seed_absence_types(db)
+        seed_compliance_rules(db)
         
         logger.info("✅ Database seeding completed successfully!")
         
