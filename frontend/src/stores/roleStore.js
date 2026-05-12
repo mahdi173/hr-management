@@ -26,5 +26,23 @@ export const useRoleStore = defineStore("role", {
       const role = this.roles.find((r) => r.id === id);
       return role ? role.name : "Non assigné";
     },
+
+    async addRole(roleData) {
+      const newId = this.roles.length
+        ? Math.max(...this.roles.map((r) => r.id)) + 1
+        : 1;
+      this.roles.push({ ...roleData, id: newId });
+    },
+
+    async updateRole(id, updatedData) {
+      const index = this.roles.findIndex((r) => r.id === id);
+      if (index !== -1) {
+        this.roles[index] = { ...this.roles[index], ...updatedData };
+      }
+    },
+
+    async deleteRole(id) {
+      this.roles = this.roles.filter((r) => r.id !== id);
+    },
   },
 });

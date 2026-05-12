@@ -2,10 +2,11 @@
     <div class="dashboard">
         <div class="d-flex justify-space-between align-center mb-8 mt-2">
             <div>
-                <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">Bonjour, Louis 👋</h1>
+                <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">Bonjour, Louis</h1>
                 <p class="text-body-1 text-grey-darken-1">Voici l'état de votre équipe pour aujourd'hui.</p>
             </div>
-            <v-btn color="primary" variant="flat" rounded="lg" size="large" prepend-icon="mdi-plus" class="px-6">
+            <v-btn color="primary" variant="flat" rounded="lg" size="large" prepend-icon="mdi-plus" class="px-6"
+                to="/plannings">
                 Nouveau Planning
             </v-btn>
         </div>
@@ -16,7 +17,7 @@
                     <div class="d-flex justify-space-between align-start">
                         <div>
                             <p class="text-body-2 text-grey-darken-1 font-weight-medium mb-2">Shifts non assignés</p>
-                            <h2 class="text-h3 font-weight-bold text-grey-darken-4">4</h2>
+                            <h2 class="text-h3 font-weight-bold text-grey-darken-4">{{ unassignedShiftsCount }}</h2>
                         </div>
                         <v-avatar color="#FEF2F2" rounded="lg" size="48">
                             <v-icon color="error">mdi-alert-circle-outline</v-icon>
@@ -24,7 +25,7 @@
                     </div>
                     <div class="mt-5 text-caption text-error font-weight-bold d-flex align-center">
                         <v-icon size="small" class="mr-1">mdi-arrow-up-right</v-icon>
-                        <span>À traiter urgemment pour ce soir</span>
+                        <span>À traiter urgemment</span>
                     </div>
                 </v-card>
             </v-col>
@@ -34,14 +35,14 @@
                     <div class="d-flex justify-space-between align-start">
                         <div>
                             <p class="text-body-2 text-grey-darken-1 font-weight-medium mb-2">Absences en attente</p>
-                            <h2 class="text-h3 font-weight-bold text-grey-darken-4">2</h2>
+                            <h2 class="text-h3 font-weight-bold text-grey-darken-4">{{ pendingAbsencesCount }}</h2>
                         </div>
                         <v-avatar color="#FFFBEB" rounded="lg" size="48">
                             <v-icon color="warning">mdi-palm-tree</v-icon>
                         </v-avatar>
                     </div>
                     <div class="mt-5 text-caption text-warning font-weight-bold">
-                        Demandes pour la semaine prochaine
+                        Demandes à valider
                     </div>
                 </v-card>
             </v-col>
@@ -52,13 +53,13 @@
                         <div>
                             <p class="text-body-2 text-grey-darken-1 font-weight-medium mb-2">Complétion Planning (S32)
                             </p>
-                            <h2 class="text-h3 font-weight-bold text-grey-darken-4">85%</h2>
+                            <h2 class="text-h3 font-weight-bold text-grey-darken-4">{{ completionRate }}%</h2>
                         </div>
                         <v-avatar color="#ECFDF5" rounded="lg" size="48">
                             <v-icon color="success">mdi-check-circle-outline</v-icon>
                         </v-avatar>
                     </div>
-                    <v-progress-linear model-value="85" color="success" height="8" rounded
+                    <v-progress-linear :model-value="completionRate" color="success" height="8" rounded
                         class="mt-5"></v-progress-linear>
                 </v-card>
             </v-col>
@@ -69,28 +70,36 @@
                 <v-card border elevation="0" rounded="xl" class="fill-height pb-4">
                     <v-card-title class="px-6 pt-6 pb-4 d-flex justify-space-between align-center">
                         <span class="text-h6 font-weight-bold">Service du jour</span>
-                        <v-btn variant="text" color="primary" size="small" class="font-weight-bold">Voir tout</v-btn>
+                        <v-btn variant="text" color="primary" size="small" class="font-weight-bold" to="/plannings">Voir
+                            tout</v-btn>
                     </v-card-title>
 
                     <v-divider class="mb-4"></v-divider>
 
-                    <v-list lines="two" class="px-4">
+                    <div v-if="todayShifts.length === 0" class="text-center py-6">
+                        <p class="text-grey-darken-1">Aucun shift pour aujourd'hui.</p>
+                    </div>
+
+                    <v-list v-else lines="two" class="px-4">
                         <v-list-item v-for="shift in todayShifts" :key="shift.id" class="mb-3 rounded-lg shift-item">
                             <template v-slot:prepend>
-                                <v-avatar :color="shift.color" size="48" rounded="lg"
-                                    class="mr-4 font-weight-bold text-white">
-                                    {{ shift.initials }}
+                                <v-avatar :color="shift.employeeId ? getRoleColor(shift.roleName) : 'error'" size="48"
+                                    rounded="lg" class="mr-4 font-weight-bold text-white">
+                                    {{ shift.employeeId ? shift.employeeName.charAt(0) : '?' }}
                                 </v-avatar>
                             </template>
 
-                            <v-list-item-title class="font-weight-bold text-body-1">{{ shift.name }}</v-list-item-title>
+                            <v-list-item-title class="font-weight-bold text-body-1"
+                                :class="{ 'text-error': !shift.employeeId }">
+                                {{ shift.employeeName || 'Non assigné' }}
+                            </v-list-item-title>
                             <v-list-item-subtitle class="text-grey-darken-1 mt-1">
                                 <v-icon size="small" class="mr-1">mdi-clock-outline</v-icon>
-                                {{ shift.time }} • {{ shift.role }}
+                                {{ shift.startTime }} - {{ shift.endTime }} • {{ shift.roleName }}
                             </v-list-item-subtitle>
 
                             <template v-slot:append>
-                                <v-chip size="small" :color="shift.statusColor" variant="tonal"
+                                <v-chip size="small" :color="getStatusColor(shift.status)" variant="tonal"
                                     class="font-weight-bold px-3">
                                     {{ shift.status }}
                                 </v-chip>
@@ -153,14 +162,56 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useScheduleStore } from '../stores/scheduleStore'
+import { useAbsenceStore } from '../stores/absenceStore'
 
-const todayShifts = ref([
-    { id: 1, name: 'Sarah Martin', initials: 'SM', time: '18:00 - 23:30', role: 'Chef de rang', status: 'Confirmé', statusColor: 'success', color: 'primary' },
-    { id: 2, name: 'Illia Semenov', initials: 'IS', time: '18:30 - 23:30', role: 'Serveur', status: 'En attente', statusColor: 'warning', color: '#6366F1' },
-    { id: 3, name: 'Ouahid Bouanani', initials: 'OB', time: '17:00 - 23:00', role: 'Cuisinier', status: 'Confirmé', statusColor: 'success', color: 'secondary' },
-    { id: 4, name: 'Non assigné', initials: '?', time: '19:00 - 23:30', role: 'Plongeur', status: 'À combler', statusColor: 'error', color: 'grey-darken-1' },
-])
+const scheduleStore = useScheduleStore()
+const absenceStore = useAbsenceStore()
+
+const todayStr = '2023-10-24'
+
+const todayShifts = computed(() => {
+    return scheduleStore.getShiftsByDate(todayStr) || []
+})
+
+const unassignedShiftsCount = computed(() => {
+    return scheduleStore.shifts.filter(s => !s.employeeId).length
+})
+
+const pendingAbsencesCount = computed(() => {
+    return absenceStore.pendingAbsences.length
+})
+
+const completionRate = computed(() => {
+    const total = scheduleStore.shifts.length
+    if (total === 0) return 100
+    const assigned = scheduleStore.shifts.filter(s => s.employeeId).length
+    return Math.round((assigned / total) * 100)
+})
+
+const getRoleColor = (role) => {
+    const colors = {
+        'Manager': '#4F46E5',
+        'Chef de rang': '#0D9488',
+        'Serveur': '#6366F1',
+        'Cuisinier': '#F59E0B',
+        'Plongeur': '#64748B'
+    }
+    return colors[role] || '#94A3B8'
+}
+
+const getStatusColor = (status) => {
+    if (status === 'Confirmé' || status === 'Approuvé') return 'success'
+    if (status === 'En attente') return 'warning'
+    if (status === 'À combler' || status === 'Refusé') return 'error'
+    return 'grey'
+}
+
+onMounted(async () => {
+    if (scheduleStore.shifts.length === 0) await scheduleStore.fetchWeeklyShifts()
+    if (absenceStore.absences.length === 0) await absenceStore.fetchAbsences()
+})
 </script>
 
 <style scoped>

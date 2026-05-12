@@ -31,5 +31,21 @@ export const useContractStore = defineStore("contract", {
       const contract = this.contracts.find((c) => c.id === id);
       return contract ? contract.name : "Non assigné";
     },
+
+    async addContract(contractData) {
+      const newId = this.contracts.length ? Math.max(...this.contracts.map(c => c.id)) + 1 : 1
+      this.contracts.push({ ...contractData, id: newId })
+    },
+
+    async updateContract(id, updatedData) {
+      const index = this.contracts.findIndex(c => c.id === id)
+      if (index !== -1) {
+        this.contracts[index] = { ...this.contracts[index], ...updatedData }
+      }
+    },
+
+    async deleteContract(id) {
+      this.contracts = this.contracts.filter(c => c.id !== id)
+    }
   },
 });
