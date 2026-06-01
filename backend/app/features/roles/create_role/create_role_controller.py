@@ -3,7 +3,9 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from ....core.dependencies import require_admin
 from ....database import get_db
+from ....models.user import User
 from ..shared.role_dto import RoleCreate, RoleResponse
 from .create_role_usecase import CreateRoleUseCase
 
@@ -11,7 +13,8 @@ router = APIRouter()
 
 
 @router.post("/", response_model=RoleResponse, status_code=status.HTTP_201_CREATED)
-def create_role(role_data: RoleCreate, db: Session = Depends(get_db)):
+def create_role(role_data: RoleCreate, db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)):
     """
     Create a new role
     

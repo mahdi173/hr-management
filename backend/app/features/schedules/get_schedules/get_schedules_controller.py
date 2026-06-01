@@ -5,7 +5,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from datetime import date
 
+from ....core.dependencies import get_current_user
 from ....database import get_db
+from ....models.user import User
 from ..shared.schedule_dto import ScheduleResponse, ScheduleStatus
 from .get_schedules_usecase import GetSchedulesUseCase
 
@@ -19,7 +21,8 @@ def list_schedules(
     status: Optional[ScheduleStatus] = None,
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user)
 ):
     """List schedules with optional filters"""
     use_case = GetSchedulesUseCase(db)
@@ -27,7 +30,11 @@ def list_schedules(
 
 
 @router.get("/{schedule_id}", response_model=ScheduleResponse)
-def get_schedule(schedule_id: int, db: Session = Depends(get_db)):
+def get_schedule(
+    schedule_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+):
     """Get a single schedule by ID"""
     use_case = GetSchedulesUseCase(db)
     return use_case.execute_one(schedule_id)

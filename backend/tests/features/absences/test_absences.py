@@ -2,12 +2,11 @@ import pytest
 from fastapi import status
 from datetime import date
 
-def test_create_absence_success(client, db_session):
-    # Setup
+def test_create_absence_success(auth_employee, db_session):
+    client = auth_employee
     from app.models.employee import Employee
     from app.models.absence import AbsenceType
-    emp = Employee(first_name="John", last_name="Doe", email="john@example.com")
-    db_session.add(emp)
+    emp = db_session.query(Employee).filter(Employee.id == 1).first()
     abt = AbsenceType(name="Vacation", requires_approval=True, is_paid=True)
     db_session.add(abt)
     db_session.commit()
@@ -25,7 +24,8 @@ def test_create_absence_success(client, db_session):
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["status"] == "pending"
 
-def test_approve_absence(client, db_session):
+def test_approve_absence(auth_manager, db_session):
+    client = auth_manager
     # Setup
     from app.models.employee import Employee
     from app.models.absence import AbsenceType, Absence, AbsenceStatus
@@ -46,7 +46,7 @@ def test_approve_absence(client, db_session):
     db_session.add(abs_req)
     db_session.commit()
     
-    response = client.put(f"/absences/{abs_req.id}/approve?manager_id={mgr.id}")
+    response = client.put(f"/absences/{abs_req.id}/approve")
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["status"] == "approved"
-    assert response.json()["approved_by_id"] == mgr.id
+    assert response.json()["approved_by_id"] == 2

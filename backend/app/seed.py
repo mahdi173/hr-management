@@ -209,11 +209,12 @@ def seed_compliance_rules(db: Session) -> None:
 def seed_users(db: Session) -> None:
     """Seed test users with hashed passwords"""
     # Get roles and contract types
+    admin_role = db.query(Role).filter(Role.name == "Admin").first()
     manager_role = db.query(Role).filter(Role.name == "Manager").first()
     employee_role = db.query(Role).filter(Role.name == "Employee").first()
     contract_type = db.query(ContractType).filter(ContractType.name == "CDI - Temps plein").first()
     
-    if not manager_role or not employee_role or not contract_type:
+    if not admin_role or not manager_role or not employee_role or not contract_type:
         logger.warning("⊘ Required roles or contract types not found. Skipping user seeding.")
         return
     
@@ -226,7 +227,7 @@ def seed_users(db: Session) -> None:
                 "last_name": "User",
                 "email": "admin@example.com",
                 "phone": "+1234567890",
-                "role_id": manager_role.id,
+                "role_id": admin_role.id,
                 "contract_type_id": contract_type.id,
                 "is_active": True
             }

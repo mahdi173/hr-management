@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import LandingPage from "../components/LandingPage.vue";
 import DashboardView from "../components/DashboardView.vue";
 import LoginPage from "../components/LoginPage.vue";
+import { useAuthStore } from "../stores/authStore";
 
 const routes = [
   {
@@ -50,6 +51,25 @@ const router = createRouter({
     }
     return savedPosition || { top: 0 };
   },
+});
+
+const publicPaths = ["/", "/login"];
+
+router.beforeEach(async (to) => {
+  if (publicPaths.includes(to.path)) {
+    return true;
+  }
+
+  const authStore = useAuthStore();
+  if (!authStore.isAuthenticated) {
+    await authStore.fetchCurrentUser();
+  }
+
+  if (!authStore.isAuthenticated) {
+    return { path: "/login", query: { redirect: to.fullPath } };
+  }
+
+  return true;
 });
 
 export default router;

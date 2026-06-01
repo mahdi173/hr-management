@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from ..shared.shift_dto import ShiftUpdate, ShiftResponse
 from .update_shift_usecase import UpdateShiftUseCase
+from ....core.dependencies import require_manager
 from ....database import get_db
+from ....models.user import User
 
 
 router = APIRouter()
@@ -20,7 +22,8 @@ router = APIRouter()
 def update_shift(
     shift_id: int,
     shift_data: ShiftUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager)
 ) -> ShiftResponse:
     """
     Update an existing shift.

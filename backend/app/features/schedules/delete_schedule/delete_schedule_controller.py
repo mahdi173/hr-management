@@ -3,14 +3,17 @@
 from fastapi import APIRouter, Depends, status, Response
 from sqlalchemy.orm import Session
 
+from ....core.dependencies import require_manager
 from ....database import get_db
+from ....models.user import User
 from .delete_schedule_usecase import DeleteScheduleUseCase
 
 router = APIRouter()
 
 
 @router.delete("/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_schedule(schedule_id: int, db: Session = Depends(get_db)):
+def delete_schedule(schedule_id: int, db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager)):
     """
     Delete an existing schedule
     

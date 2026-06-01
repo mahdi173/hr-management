@@ -3,7 +3,9 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from ....core.dependencies import require_admin
 from ....database import get_db
+from ....models.user import User
 from ..shared.contract_type_dto import ContractTypeCreate, ContractTypeResponse
 from .create_contract_type_usecase import CreateContractTypeUseCase
 
@@ -23,7 +25,8 @@ router = APIRouter()
 )
 def create_contract_type(
     contract_type_data: ContractTypeCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     """
     Create a new contract type

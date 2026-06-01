@@ -3,7 +3,9 @@
 from fastapi import APIRouter, Depends, Path
 from sqlalchemy.orm import Session
 
+from ....core.dependencies import get_current_user
 from ....database import get_db
+from ....models.user import User
 from ..shared.contract_type_dto import ContractTypeResponse
 from .get_one_contract_type_usecase import GetOneContractTypeUseCase
 
@@ -22,7 +24,8 @@ router = APIRouter()
 )
 def get_one_contract_type(
     contract_type_id: int = Path(..., gt=0, description="The ID of the contract type to retrieve"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user)
 ):
     """
     Get a specific contract type by ID

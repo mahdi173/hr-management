@@ -475,4 +475,33 @@ For issues and questions:
 
 ---
 
+## Authentication
+
+JWT auth uses **HttpOnly cookies**. Configure via root `.env` (see `.env.example`).
+
+```bash
+cp .env.example .env
+docker-compose up --build
+```
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /auth/login` | Login |
+| `POST /auth/logout` | Logout |
+| `GET /auth/me` | Current user |
+
+User routes: `GET /api/v1/shifts/me`, `GET /api/v1/shifts/me/hours`, `GET /absences/me`, `GET /availabilities/me`.
+
+**Seed accounts** (after first startup):
+
+| Email | Password | Role |
+|-------|----------|------|
+| `admin@example.com` | `admin123` | Admin |
+| `manager@example.com` | `manager123` | Manager |
+| `employee@example.com` | `employee123` | Employee |
+
+Run backend auth tests: `cd backend && pytest tests/features/auth/ -v`
+
+---
+
 **Happy Coding! 🎉**

@@ -1,17 +1,11 @@
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 async function fetchWrapper(endpoint, options = {}) {
-  const token = localStorage.getItem("timeapp_token");
-
   const headers = {
     "Content-Type": "application/json",
     Accept: "application/json",
     ...options.headers,
   };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
 
   const config = {
     ...options,

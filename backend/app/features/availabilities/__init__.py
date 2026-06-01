@@ -7,9 +7,13 @@ from .get_employee_availabilities import router as get_employee_availabilities_r
 from .get_one_availability import router as get_one_availability_router
 from .update_availability import router as update_availability_router
 from .delete_availability import router as delete_availability_router
+from .get_my_availabilities.get_my_availabilities_controller import (
+    router as get_my_availabilities_router,
+)
 
 router = APIRouter(tags=["Availabilities"])
 
+router.include_router(get_my_availabilities_router)
 router.include_router(create_availability_router)
 router.include_router(get_employee_availabilities_router)
 router.include_router(get_one_availability_router)

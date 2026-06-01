@@ -3,7 +3,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from ....core.dependencies import require_manager
 from ....database import get_db
+from ....models.user import User
 from ..shared.schedule_dto import ScheduleUpdate, ScheduleResponse
 from .update_schedule_usecase import UpdateScheduleUseCase
 
@@ -11,7 +13,8 @@ router = APIRouter()
 
 
 @router.put("/{schedule_id}", response_model=ScheduleResponse)
-def update_schedule(schedule_id: int, schedule_data: ScheduleUpdate, db: Session = Depends(get_db)):
+def update_schedule(schedule_id: int, schedule_data: ScheduleUpdate, db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager)):
     """
     Update an existing schedule
     

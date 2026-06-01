@@ -3,7 +3,9 @@
 from fastapi import APIRouter, Depends, Path, Query, status
 from sqlalchemy.orm import Session
 
+from ....core.dependencies import require_manager
 from ....database import get_db
+from ....models.user import User
 from .delete_shift_usecase import DeleteShiftUseCase
 
 router = APIRouter()
@@ -26,7 +28,8 @@ def delete_shift(
     manager_id: int = Query(..., gt=0, description="ID of the manager authorizing the deletion"),
     hard_delete: bool = Query(False, description="If true, permanently delete; if false, soft delete (default)"),
     force: bool = Query(False, description="If true, delete even if there are active assignments (default: false)"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager)
 ):
     """
     Delete a shift

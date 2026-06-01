@@ -3,7 +3,9 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from ....core.dependencies import require_admin
 from ....database import get_db
+from ....models.user import User
 from ..shared import EmployeeCreate, EmployeeResponse
 from .create_employee_usecase import CreateEmployeeUseCase
 
@@ -19,7 +21,8 @@ router = APIRouter()
 )
 def create_employee(
     employee: EmployeeCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin),
 ):
     """
     Create a new employee with all the information:

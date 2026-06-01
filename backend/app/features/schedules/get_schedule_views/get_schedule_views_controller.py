@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 
 from ..shared.schedule_view_dto import DayView, WeekView, MonthView, ScheduleExport
 from .get_schedule_views_usecase import GetScheduleViewsUseCase
+from ....core.dependencies import get_current_user
 from ....database import get_db
+from ....models.user import User
 
 
 router = APIRouter()
@@ -24,7 +26,8 @@ def get_day_view(
     date: date = Query(..., description="Date to view (YYYY-MM-DD)"),
     employee_id: Optional[int] = Query(None, description="Filter by employee ID"),
     role_id: Optional[int] = Query(None, description="Filter by required role ID"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ) -> DayView:
     """
     Get day view: all shifts for a specific date with assigned employees.
@@ -53,7 +56,8 @@ def get_week_view(
     start_date: date = Query(..., description="First day of the week (YYYY-MM-DD)"),
     employee_id: Optional[int] = Query(None, description="Filter by employee ID"),
     role_id: Optional[int] = Query(None, description="Filter by required role ID"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ) -> WeekView:
     """
     Get week view: shifts across 7 days starting from the given date.
@@ -83,7 +87,8 @@ def get_month_view(
     month: int = Query(..., ge=1, le=12, description="Month (1-12)"),
     employee_id: Optional[int] = Query(None, description="Filter by employee ID"),
     role_id: Optional[int] = Query(None, description="Filter by required role ID"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ) -> MonthView:
     """
     Get month view: shifts across an entire month organized by weeks.
@@ -110,7 +115,8 @@ def get_month_view(
 )
 def export_schedule(
     schedule_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ) -> ScheduleExport:
     """
     Export complete schedule data in structured JSON format.

@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from .remove_assignment_usecase import RemoveAssignmentUseCase
+from ....core.dependencies import require_manager
 from ....database import get_db
+from ....models.user import User
 
 
 router = APIRouter()
@@ -19,7 +21,8 @@ router = APIRouter()
 def remove_assignment(
     shift_id: int,
     employee_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager)
 ) -> dict:
     """
     Remove an employee assignment from a shift.

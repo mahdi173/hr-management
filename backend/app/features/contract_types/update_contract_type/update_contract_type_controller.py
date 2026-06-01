@@ -3,7 +3,9 @@
 from fastapi import APIRouter, Depends, Path
 from sqlalchemy.orm import Session
 
+from ....core.dependencies import require_admin
 from ....database import get_db
+from ....models.user import User
 from ..shared.contract_type_dto import ContractTypeUpdate, ContractTypeResponse
 from .update_contract_type_usecase import UpdateContractTypeUseCase
 
@@ -24,7 +26,8 @@ router = APIRouter()
 def update_contract_type(
     contract_type_data: ContractTypeUpdate,
     contract_type_id: int = Path(..., gt=0, description="The ID of the contract type to update"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     """
     Update an existing contract type

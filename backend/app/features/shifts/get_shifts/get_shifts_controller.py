@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 
 from ..shared.shift_dto import ShiftResponse
 from .get_shifts_usecase import GetShiftsUseCase
+from ....core.dependencies import get_current_user
 from ....database import get_db
+from ....models.user import User
 
 
 router = APIRouter()
@@ -27,7 +29,8 @@ def get_shifts(
     include_assignments: bool = Query(False, description="Include shift assignments"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Max records to return"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ) -> List[ShiftResponse]:
     """
     Get shifts with optional filters:
@@ -59,7 +62,8 @@ def get_shifts(
 def get_shift(
     shift_id: int,
     include_assignments: bool = Query(False, description="Include shift assignments"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ) -> ShiftResponse:
     """
     Get a specific shift by ID.

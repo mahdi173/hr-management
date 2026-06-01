@@ -222,7 +222,7 @@ onMounted(async () => {
     
     await Promise.all([
         scheduleStore.fetchWeeklyShifts(),
-        absenceStore.fetchAbsences()
+        absenceStore.fetchAbsences(authStore.isManager)
     ])
 })
 </script>

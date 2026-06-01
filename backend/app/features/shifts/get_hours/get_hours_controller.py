@@ -7,7 +7,10 @@ from sqlalchemy.orm import Session
 
 from ..shared.shift_dto import HoursSummary, ShiftWithHours
 from .get_hours_usecase import GetHoursUseCase
+from ....core.authorization import verify_resource_access
+from ....core.dependencies import get_current_user
 from ....database import get_db
+from ....models.user import User
 
 
 router = APIRouter()
@@ -23,7 +26,8 @@ def get_employee_hours(
     employee_id: int,
     start_date: date = Query(..., description="Start date of the period"),
     end_date: date = Query(..., description="End date of the period"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> HoursSummary:
     """
     Get working hours summary for an employee in a date range.
@@ -40,6 +44,7 @@ def get_employee_hours(
     
     This endpoint implements **US 1.8: Working Hours Tracking**
     """
+    verify_resource_access(current_user, employee_id)
     use_case = GetHoursUseCase(db)
     return use_case.execute(employee_id, start_date, end_date)
 
@@ -54,7 +59,8 @@ def get_employee_overtime(
     employee_id: int,
     start_date: Optional[date] = Query(None, description="Start date filter"),
     end_date: Optional[date] = Query(None, description="End date filter"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> List[ShiftWithHours]:
     """
     Get detailed list of overtime shifts for an employee.
@@ -70,5 +76,6 @@ def get_employee_overtime(
     
     This endpoint implements **US 1.8: Working Hours Tracking**
     """
+    verify_resource_access(current_user, employee_id)
     use_case = GetHoursUseCase(db)
     return use_case.get_overtime_details(employee_id, start_date, end_date)

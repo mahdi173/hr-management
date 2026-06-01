@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
+from ...core.dependencies import require_manager
 from ...database import get_db
+from ...models.user import User
 from ..shifts.shared.alert_service import AlertService
 from ...models.alert import AlertSeverity, AlertType
 
@@ -15,7 +17,8 @@ router = APIRouter(prefix="/alerts", tags=["Alerts"])
 def get_alerts(
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager),
 ):
     """Get all unresolved alerts"""
     service = AlertService(db)
@@ -37,7 +40,8 @@ def get_alerts(
 @router.put("/{alert_id}/resolve")
 def resolve_alert(
     alert_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager),
 ):
     """Mark an alert as resolved"""
     service = AlertService(db)

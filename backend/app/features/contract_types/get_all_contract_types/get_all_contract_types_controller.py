@@ -4,7 +4,9 @@ from typing import List
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from ....core.dependencies import get_current_user
 from ....database import get_db
+from ....models.user import User
 from ..shared.contract_type_dto import ContractTypeResponse
 from .get_all_contract_types_usecase import GetAllContractTypesUseCase
 
@@ -24,7 +26,8 @@ def get_all_contract_types(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     active_only: bool = Query(False, description="Filter to show only active contract types"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user)
 ):
     """
     Get all contract types

@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from ..shared.shift_dto import ShiftAssignmentCreate, ShiftAssignmentResponse
 from .assign_employee_usecase import AssignEmployeeUseCase
+from ....core.dependencies import require_manager
 from ....database import get_db
+from ....models.user import User
 
 
 router = APIRouter()
@@ -21,7 +23,8 @@ router = APIRouter()
 def assign_employee(
     shift_id: int,
     assignment_data: ShiftAssignmentCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager)
 ) -> ShiftAssignmentResponse:
     """
     Assign an employee to a shift.

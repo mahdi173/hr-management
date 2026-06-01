@@ -295,7 +295,7 @@ const handleRowClick = (event, { item }) => {
 
 onMounted(async () => {
     if (!authStore.user) await authStore.fetchCurrentUser()
-    if (absenceStore.absences.length === 0) await absenceStore.fetchAbsences()
+    if (absenceStore.absences.length === 0) await absenceStore.fetchAbsences(authStore.isManager)
     if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
 })
 </script>

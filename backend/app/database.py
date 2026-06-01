@@ -9,13 +9,22 @@ SQLALCHEMY_DATABASE_URL = os.getenv(
     "postgresql://mvp_user:mvp_password@localhost:5432/mvp_db"
 )
 
-# Create engine with PostgreSQL optimizations
+# Create engine (PostgreSQL pool settings; SQLite for tests)
+_engine_kwargs = {
+    "pool_pre_ping": True,
+    "pool_size": 10,
+    "max_overflow": 20,
+    "echo": False,
+}
+_connect_args = {}
+if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    _engine_kwargs = {"echo": False}
+    _connect_args = {"check_same_thread": False}
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    pool_pre_ping=True,  # Verify connections before using
-    pool_size=10,  # Connection pool size
-    max_overflow=20,  # Max overflow connections
-    echo=False  # Set to True for SQL query logging
+    connect_args=_connect_args,
+    **_engine_kwargs,
 )
 
 # Create SessionLocal class

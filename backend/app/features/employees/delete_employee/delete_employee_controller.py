@@ -3,7 +3,9 @@
 from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 
+from ....core.dependencies import require_admin
 from ....database import get_db
+from ....models.user import User
 from .delete_employee_usecase import DeleteEmployeeUseCase
 
 router = APIRouter()
@@ -18,7 +20,8 @@ router = APIRouter()
 def delete_employee(
     id: int,
     hard_delete: bool = Query(False, description="Permanently delete if true, soft delete if false"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin),
 ):
     """
     Delete an employee:

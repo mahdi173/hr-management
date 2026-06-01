@@ -59,10 +59,10 @@ export const useAbsenceStore = defineStore("absence", {
       };
     },
 
-    async fetchAbsences() {
+    async fetchAbsences(isManager = false) {
       this.isLoading = true;
       try {
-        const data = await api.get("/absences/");
+        const data = await api.get(isManager ? "/absences/" : "/absences/me");
         const items = Array.isArray(data) ? data : data.items || [];
         this.absences = items.map(this.formatAbsenceForUI);
       } catch (err) {
@@ -95,8 +95,8 @@ export const useAbsenceStore = defineStore("absence", {
       try {
         const endpoint =
           newStatus === "Approuvé"
-            ? `/absences/${id}/approve?manager_id=1`
-            : `/absences/${id}/reject?manager_id=1`;
+            ? `/absences/${id}/approve`
+            : `/absences/${id}/reject`;
 
         const updated = await api.put(endpoint);
 

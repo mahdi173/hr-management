@@ -33,7 +33,7 @@ def test_login_admin():
     assert response.status_code == 200
     data = response.json()
     assert data["email"] == "admin@example.com"
-    assert data["role"] == "Manager"
+    assert data["role"] == "Admin"
     assert "access_token" in response.cookies
     print("   ✅ Admin login successful")
     return response.cookies

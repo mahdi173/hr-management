@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import date
 
+from ...core.dependencies import require_manager
 from ...database import get_db
+from ...models.user import User
 from ..shifts.shared.analytics_service import AnalyticsService
 from ..shifts.shared.coverage_alert_service import CoverageAlertService
 from ..shifts.shared.insight_service import InsightService
@@ -18,7 +20,8 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 def get_workload_analysis(
     start_date: date = Query(...),
     end_date: date = Query(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager),
 ):
     """Analyze workload for all active employees"""
     service = AnalyticsService(db)
@@ -28,7 +31,8 @@ def get_workload_analysis(
 @router.get("/schedule/{schedule_id}/health")
 def get_schedule_health(
     schedule_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager),
 ):
     """Get health metrics for a specific schedule"""
     service = AnalyticsService(db)
@@ -38,7 +42,8 @@ def get_schedule_health(
 @router.post("/schedule/{schedule_id}/refresh-coverage-alerts")
 def refresh_coverage_alerts(
     schedule_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager),
 ):
     """Scan schedule for unassigned shifts and create alerts"""
     service = CoverageAlertService(db)
@@ -48,7 +53,8 @@ def refresh_coverage_alerts(
 
 @router.post("/refresh-insights")
 def refresh_insights(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager),
 ):
     """Run proactive insight detection and create alerts"""
     service = InsightService(db)
@@ -60,7 +66,8 @@ def refresh_insights(
 def get_rebalancing_suggestions(
     start_date: date = Query(...),
     end_date: date = Query(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager),
 ):
     """Get suggestions to rebalance workload between employees"""
     service = OptimizationService(db)

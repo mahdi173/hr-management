@@ -153,7 +153,7 @@ def require_manager(
             detail="Manager access required"
         )
     
-    if current_user.employee.role.name not in ["Admin", "Manager"]:
+    if current_user.employee.role.name not in ["Admin", "Manager", "Team Lead"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Manager access required"

@@ -3,7 +3,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from ....core.dependencies import require_admin
 from ....database import get_db
+from ....models.user import User
 from ..shared import EmployeeUpdate, EmployeeResponse
 from .update_employee_usecase import UpdateEmployeeUseCase
 
@@ -19,7 +21,8 @@ router = APIRouter()
 def update_employee(
     id: int,
     employee: EmployeeUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin),
 ):
     """
     Update an employee's information:

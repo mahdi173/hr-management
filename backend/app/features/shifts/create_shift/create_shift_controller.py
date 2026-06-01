@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from ..shared.shift_dto import ShiftCreate, ShiftResponse
 from .create_shift_usecase import CreateShiftUseCase
+from ....core.dependencies import require_manager
 from ....database import get_db
+from ....models.user import User
 
 
 router = APIRouter()
@@ -21,7 +23,8 @@ router = APIRouter()
 def create_shift(
     schedule_id: int,
     shift_data: ShiftCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager)
 ) -> ShiftResponse:
     """
     Create a new shift for a schedule.

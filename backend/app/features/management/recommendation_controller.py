@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
+from ...core.dependencies import require_manager
 from ...database import get_db
+from ...models.user import User
 from ..shifts.shared.recommendation_service import RecommendationService
 from ..shifts.shared.recommendation_dto import ShiftRecommendations
 
@@ -14,7 +16,8 @@ router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
 @router.get("/shift/{shift_id}", response_model=ShiftRecommendations)
 def get_recommendations_for_shift(
     shift_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager),
 ):
     """
     Get top employee recommendations for a specific shift.
