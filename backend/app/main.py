@@ -4,6 +4,7 @@ import logging
 
 from .models import Base
 from .database import engine
+from .features.auth import router as auth_router
 from .features.employees import router as employees_router
 from .features.roles import router as roles_router
 from .features.absences import router as absences_router
@@ -79,6 +80,10 @@ app = FastAPI(
             "description": "Health check and status endpoints",
         },
         {
+            "name": "authentication",
+            "description": "User authentication and authorization - Login, logout, and current user info",
+        },
+        {
             "name": "employees",
             "description": "Employee management operations - CRUD functionality for managing employee profiles",
         },
@@ -95,6 +100,7 @@ app.add_middleware(
 )
 
 # Include feature routers (vertical slice architecture)
+app.include_router(auth_router)
 app.include_router(employees_router)
 app.include_router(roles_router)
 app.include_router(absences_router)

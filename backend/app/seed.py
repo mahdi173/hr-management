@@ -3,9 +3,10 @@ Database seeding script - creates initial data with existence checks.
 Seeds are idempotent - safe to run multiple times.
 """
 from sqlalchemy.orm import Session
-from app.models import Role, ContractType, User, AbsenceType, ComplianceRule
+from app.models import Role, ContractType, User, AbsenceType, ComplianceRule, Employee
 from app.models.compliance import RuleType
 from app.database import SessionLocal
+from app.core.security import hash_password
 import logging
 
 logger = logging.getLogger(__name__)
@@ -205,6 +206,83 @@ def seed_compliance_rules(db: Session) -> None:
     db.commit()
 
 
+def seed_users(db: Session) -> None:
+    """Seed test users with hashed passwords"""
+    # Get roles and contract types
+    manager_role = db.query(Role).filter(Role.name == "Manager").first()
+    employee_role = db.query(Role).filter(Role.name == "Employee").first()
+    contract_type = db.query(ContractType).filter(ContractType.name == "CDI - Temps plein").first()
+    
+    if not manager_role or not employee_role or not contract_type:
+        logger.warning("⊘ Required roles or contract types not found. Skipping user seeding.")
+        return
+    
+    test_users = [
+        {
+            "email": "admin@example.com",
+            "password": "admin123",
+            "employee": {
+                "first_name": "Admin",
+                "last_name": "User",
+                "email": "admin@example.com",
+                "phone": "+1234567890",
+                "role_id": manager_role.id,
+                "contract_type_id": contract_type.id,
+                "is_active": True
+            }
+        },
+        {
+            "email": "manager@example.com",
+            "password": "manager123",
+            "employee": {
+                "first_name": "Jane",
+                "last_name": "Manager",
+                "email": "manager@example.com",
+                "phone": "+1234567891",
+                "role_id": manager_role.id,
+                "contract_type_id": contract_type.id,
+                "is_active": True
+            }
+        },
+        {
+            "email": "employee@example.com",
+            "password": "employee123",
+            "employee": {
+                "first_name": "John",
+                "last_name": "Employee",
+                "email": "employee@example.com",
+                "phone": "+1234567892",
+                "role_id": employee_role.id,
+                "contract_type_id": contract_type.id,
+                "is_active": True
+            }
+        }
+    ]
+    
+    for user_data in test_users:
+        # Check if user already exists
+        existing_user = db.query(User).filter(User.email == user_data["email"]).first()
+        if not existing_user:
+            # Create employee first
+            employee = Employee(**user_data["employee"])
+            db.add(employee)
+            db.flush()  # Get employee ID
+            
+            # Create user with hashed password
+            user = User(
+                email=user_data["email"],
+                hashed_password=hash_password(user_data["password"]),
+                is_active=True,
+                employee_id=employee.id
+            )
+            db.add(user)
+            logger.info(f"✓ Created user: {user_data['email']} (password: {user_data['password']})")
+        else:
+            logger.info(f"⊘ User already exists: {user_data['email']}")
+    
+    db.commit()
+
+
 def seed_database() -> None:
     """
     Main seeding function - runs all seed operations.
@@ -219,6 +297,7 @@ def seed_database() -> None:
         seed_contract_types(db)
         seed_absence_types(db)
         seed_compliance_rules(db)
+        seed_users(db)
         
         logger.info("✅ Database seeding completed successfully!")
         

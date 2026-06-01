@@ -34,6 +34,9 @@ services:
     environment:
       - DATABASE_URL=postgresql://mvp_user:mvp_password@postgres:5432/mvp_db
       - PYTHONUNBUFFERED=1
+      - SECRET_KEY=docker-secret-key-change-in-production-min-32-chars-random
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
     networks:
       - mvp-network
     depends_on:
