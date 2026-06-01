@@ -1,0 +1,1 @@
+"""Logout feature module"""
