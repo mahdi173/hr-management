@@ -5,17 +5,17 @@
                 <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">Équipe</h1>
                 <p class="text-body-1 text-grey-darken-1">Consultez les collaborateurs et leurs informations.</p>
             </div>
-            <div class="mt-4 mt-md-0 d-flex align-center">
+            <div class="mt-4 mt-md-0 d-flex align-center w-100 justify-end" style="max-width: 600px;">
                 <v-switch v-if="authStore.isManager" v-model="showInactive" label="Afficher les inactifs"
                     color="primary" hide-details density="compact"
-                    class="mr-4 text-body-2 font-weight-medium"></v-switch>
+                    class="mr-4 text-body-2 font-weight-medium flex-shrink-0"></v-switch>
 
                 <v-text-field v-model="search" prepend-inner-icon="mdi-magnify" placeholder="Rechercher un membre..."
                     variant="outlined" density="compact" hide-details bg-color="white" rounded="lg"
-                    class="flex-grow-1"></v-text-field>
+                    style="min-width: 260px;" class="flex-grow-1 flex-md-grow-0"></v-text-field>
 
                 <v-btn v-if="authStore.isManager" color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus"
-                    class="ml-4 px-5 font-weight-bold" @click="openNewModal">
+                    class="ml-4 px-5 font-weight-bold flex-shrink-0" @click="openNewModal">
                     Ajouter
                 </v-btn>
             </div>
@@ -240,8 +240,6 @@ const dialogAvailability = ref(false)
 const editedIndex = ref(-1)
 const itemToDelete = ref(null)
 const currentEmployeeForAvailability = ref(null)
-
-const snackbar = ref({ show: false, text: '', color: 'success', icon: 'mdi-check-circle' })
 
 const snackbar = ref({ show: false, text: '', color: 'success', icon: 'mdi-check-circle' })
 

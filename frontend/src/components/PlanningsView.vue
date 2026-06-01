@@ -380,27 +380,6 @@ const shiftsForDay = (dateStr) => {
     return scheduleStore.getShiftsByDate(dateStr) || []
 }
 
-const weekDays = computed(() => {
-    const days = []
-    const startOfWeek = new Date(baseDate.value)
-    const day = startOfWeek.getDay()
-    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1)
-    startOfWeek.setDate(diff)
-    const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
-    for (let i = 0; i < 7; i++) {
-        const currentDate = new Date(startOfWeek)
-        currentDate.setDate(startOfWeek.getDate() + i)
-        const dateString = currentDate.toISOString().split('T')[0]
-        days.push({
-            date: dateString,
-            dayName: dayNames[currentDate.getDay()],
-            dayNumber: currentDate.getDate(),
-            isToday: dateString === new Date().toISOString().split('T')[0]
-        })
-    }
-    return days
-})
-
 const monthCells = computed(() => {
     const cells = []
     const year = baseDate.value.getFullYear()

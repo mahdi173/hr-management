@@ -216,9 +216,14 @@ const getStatusColor = (status) => {
 }
 
 onMounted(async () => {
-    if (!authStore.user) await authStore.fetchCurrentUser()
-    if (scheduleStore.shifts.length === 0) await scheduleStore.fetchWeeklyShifts()
-    if (absenceStore.absences.length === 0) await absenceStore.fetchAbsences()
+    if (!authStore.user) {
+        await authStore.fetchCurrentUser()
+    }
+    
+    await Promise.all([
+        scheduleStore.fetchWeeklyShifts(),
+        absenceStore.fetchAbsences()
+    ])
 })
 </script>
 
