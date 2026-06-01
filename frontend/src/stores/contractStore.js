@@ -3,28 +3,21 @@ import { api } from "../services/api";
 
 export const useContractStore = defineStore("contract", {
   state: () => ({
-    contracts: [
-      { id: 1, name: "CDI 39h", weekly_hours: 39 },
-      { id: 2, name: "CDI 35h", weekly_hours: 35 },
-      { id: 3, name: "CDD 20h", weekly_hours: 20 },
-      { id: 4, name: "Extra", weekly_hours: 0 },
-    ],
+    contracts: [],
     isLoading: false,
   }),
 
   actions: {
     async fetchContracts() {
-      /*
       this.isLoading = true;
       try {
-        const data = await api.get('/contract-types/');
-        this.contracts = data;
+        const data = await api.get("/contract-types/");
+        this.contracts = Array.isArray(data) ? data : data.items || [];
       } catch (err) {
-        console.error(err);
+        console.error("Erreur chargement contrats:", err);
       } finally {
         this.isLoading = false;
       }
-      */
     },
 
     getContractNameById(id) {
@@ -33,19 +26,44 @@ export const useContractStore = defineStore("contract", {
     },
 
     async addContract(contractData) {
-      const newId = this.contracts.length ? Math.max(...this.contracts.map(c => c.id)) + 1 : 1
-      this.contracts.push({ ...contractData, id: newId })
+      try {
+        const payload = {
+          name: contractData.name,
+          weekly_hours: contractData.weekly_hours,
+        };
+        const created = await api.post("/contract-types/", payload);
+        this.contracts.push(created);
+      } catch (err) {
+        console.error("Erreur création contrat:", err);
+        throw err;
+      }
     },
 
     async updateContract(id, updatedData) {
-      const index = this.contracts.findIndex(c => c.id === id)
-      if (index !== -1) {
-        this.contracts[index] = { ...this.contracts[index], ...updatedData }
+      try {
+        const payload = {
+          name: updatedData.name,
+          weekly_hours: updatedData.weekly_hours,
+        };
+        const updated = await api.put(`/contract-types/${id}`, payload);
+        const index = this.contracts.findIndex((c) => c.id === id);
+        if (index !== -1) {
+          this.contracts[index] = updated;
+        }
+      } catch (err) {
+        console.error("Erreur modification contrat:", err);
+        throw err;
       }
     },
 
     async deleteContract(id) {
-      this.contracts = this.contracts.filter(c => c.id !== id)
-    }
+      try {
+        await api.delete(`/contract-types/${id}`);
+        this.contracts = this.contracts.filter((c) => c.id !== id);
+      } catch (err) {
+        console.error("Erreur suppression contrat:", err);
+        throw err;
+      }
+    },
   },
 });

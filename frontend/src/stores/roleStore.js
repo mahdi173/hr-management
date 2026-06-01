@@ -5,7 +5,6 @@ export const useRoleStore = defineStore("role", {
   state: () => ({
     roles: [],
     isLoading: false,
-    error: null,
   }),
 
   actions: {
@@ -13,10 +12,9 @@ export const useRoleStore = defineStore("role", {
       this.isLoading = true;
       try {
         const data = await api.get("/roles/");
-        this.roles = data;
+        this.roles = Array.isArray(data) ? data : data.items || [];
       } catch (err) {
-        this.error = "Erreur lors du chargement des rôles.";
-        console.error(err);
+        console.error("Erreur chargement roles:", err);
       } finally {
         this.isLoading = false;
       }
@@ -28,21 +26,44 @@ export const useRoleStore = defineStore("role", {
     },
 
     async addRole(roleData) {
-      const newId = this.roles.length
-        ? Math.max(...this.roles.map((r) => r.id)) + 1
-        : 1;
-      this.roles.push({ ...roleData, id: newId });
+      try {
+        const payload = {
+          name: roleData.name,
+          description: roleData.name,
+        };
+        const created = await api.post("/roles/", payload);
+        this.roles.push(created);
+      } catch (err) {
+        console.error("Erreur création role:", err);
+        throw err;
+      }
     },
 
     async updateRole(id, updatedData) {
-      const index = this.roles.findIndex((r) => r.id === id);
-      if (index !== -1) {
-        this.roles[index] = { ...this.roles[index], ...updatedData };
+      try {
+        const payload = {
+          name: updatedData.name,
+          description: updatedData.name,
+        };
+        const updated = await api.put(`/roles/${id}`, payload);
+        const index = this.roles.findIndex((r) => r.id === id);
+        if (index !== -1) {
+          this.roles[index] = updated;
+        }
+      } catch (err) {
+        console.error("Erreur modification role:", err);
+        throw err;
       }
     },
 
     async deleteRole(id) {
-      this.roles = this.roles.filter((r) => r.id !== id);
+      try {
+        await api.delete(`/roles/${id}`);
+        this.roles = this.roles.filter((r) => r.id !== id);
+      } catch (err) {
+        console.error("Erreur suppression role:", err);
+        throw err;
+      }
     },
   },
 });

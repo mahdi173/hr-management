@@ -37,9 +37,18 @@ async function fetchWrapper(endpoint, options = {}) {
 
 export const api = {
   get: (endpoint) => fetchWrapper(endpoint, { method: "GET" }),
+
   post: (endpoint, body) =>
     fetchWrapper(endpoint, { method: "POST", body: JSON.stringify(body) }),
+
   put: (endpoint, body) =>
     fetchWrapper(endpoint, { method: "PUT", body: JSON.stringify(body) }),
+
+  patch: (endpoint, body) =>
+    fetchWrapper(endpoint, {
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : null,
+    }),
+
   delete: (endpoint) => fetchWrapper(endpoint, { method: "DELETE" }),
 };

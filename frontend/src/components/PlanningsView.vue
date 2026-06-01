@@ -28,139 +28,158 @@
             </div>
         </div>
 
-        <div v-if="currentView === 'day'" class="day-view">
-            <v-card border elevation="0" rounded="xl" class="pa-4 pa-md-6 bg-white">
-                <div class="d-flex flex-column flex-sm-row justify-space-between align-sm-center mb-6 gap-3">
-                    <h2 class="text-h6 font-weight-bold">{{ getFullDateLabel(baseDate) }}</h2>
-                    <v-btn color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus"
-                        @click="openNewShiftModal(baseDateStr)">
-                        Ajouter un shift
-                    </v-btn>
-                </div>
-
-                <div v-if="shiftsForDay(baseDateStr).length === 0"
-                    class="text-center py-10 bg-grey-lighten-4 rounded-lg border-dashed">
-                    <v-icon color="grey" size="48" class="mb-2">mdi-calendar-blank</v-icon>
-                    <p class="text-grey-darken-1 font-weight-medium">Aucun shift planifié pour cette journée.</p>
-                </div>
-
-                <v-list v-else class="bg-transparent" lines="two">
-                    <v-card v-for="shift in shiftsForDay(baseDateStr)" :key="shift.id" border elevation="0" rounded="lg"
-                        class="mb-3 px-4 py-3 d-flex flex-column flex-sm-row align-sm-center justify-space-between shift-card-horizontal cursor-pointer"
-                        :class="{ 'unassigned-border': !shift.employeeId }"
-                        :style="`border-left: 4px solid ${!shift.employeeId ? '#E11D48' : getRoleColor(shift.roleName)} !important;`"
-                        @click="editExistingShift(shift)">
-
-                        <div class="d-flex align-center mb-3 mb-sm-0">
-                            <div class="time-block mr-4 mr-sm-6 text-center">
-                                <div class="text-subtitle-1 text-sm-h6 font-weight-bold">{{ shift.startTime }}</div>
-                                <div class="text-caption text-grey-darken-1">{{ shift.endTime }}</div>
-                            </div>
-                            <v-avatar :color="!shift.employeeId ? 'error-lighten-4' : 'grey-lighten-3'" size="40"
-                                class="mr-3 mr-sm-4 rounded-lg">
-                                <span v-if="shift.employeeId" class="font-weight-bold">{{ shift.employeeName.charAt(0)
-                                }}</span>
-                                <v-icon v-else color="error">mdi-account-alert</v-icon>
-                            </v-avatar>
-                            <div>
-                                <div class="font-weight-bold text-body-2 text-sm-body-1"
-                                    :class="{ 'text-error': !shift.employeeId }">
-                                    {{ shift.employeeName || 'Shift Non Assigné' }}
-                                </div>
-                                <div class="text-caption text-grey-darken-1">{{ shift.roleName }}</div>
-                            </div>
-                        </div>
-                        <v-chip :color="getRoleColor(shift.roleName)" variant="tonal" size="small"
-                            class="font-weight-bold align-self-start align-self-sm-center">{{ shift.status }}</v-chip>
-                    </v-card>
-                </v-list>
-            </v-card>
+        <div v-if="!currentSchedule" class="text-center py-16 bg-white rounded-xl border mt-6">
+            <v-avatar color="primary-lighten-5" size="80" class="mb-4">
+                <v-icon color="primary" size="40">mdi-calendar-plus</v-icon>
+            </v-avatar>
+            <h2 class="text-h5 font-weight-bold mb-2">Aucun planning pour cette période</h2>
+            <p class="text-grey-darken-1 mb-6">Vous devez initialiser la semaine avant de pouvoir y ajouter des shifts.
+            </p>
+            <v-btn color="primary" variant="flat" rounded="lg" size="large" prepend-icon="mdi-plus"
+                @click="createNewSchedule" :loading="scheduleStore.isLoading">
+                Créer le planning de la semaine
+            </v-btn>
         </div>
 
-        <div v-else-if="currentView === 'week'" class="week-view">
-            <div class="d-flex flex-nowrap gap-4 overflow-x-auto custom-scrollbar pb-6 pt-2" style="min-height: 60vh;">
-                <div v-for="day in weekDays" :key="day.date" class="day-column d-flex flex-column">
-                    <div class="day-header text-center py-2 py-sm-3 mb-3 rounded-lg border bg-white flex-shrink-0"
-                        :class="{ 'border-primary bg-primary-lighten-5': day.isToday }">
-                        <div class="text-uppercase text-caption font-weight-bold text-grey-darken-1 mb-1">{{ day.dayName
-                        }}</div>
-                        <div class="text-h6 font-weight-bold" :class="{ 'text-primary': day.isToday }">{{ day.dayNumber
-                        }}</div>
+        <div v-else>
+            <div v-if="currentView === 'day'" class="day-view">
+                <v-card border elevation="0" rounded="xl" class="pa-4 pa-md-6 bg-white">
+                    <div class="d-flex flex-column flex-sm-row justify-space-between align-sm-center mb-6 gap-3">
+                        <h2 class="text-h6 font-weight-bold">{{ getFullDateLabel(baseDate) }}</h2>
+                        <v-btn color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus"
+                            @click="openNewShiftModal(baseDateStr)">
+                            Ajouter un shift
+                        </v-btn>
                     </div>
 
-                    <div class="shifts-container d-flex flex-column flex-grow-1">
-                        <div class="flex-grow-1 mb-2">
-                            <v-card v-for="shift in shiftsForDay(day.date)" :key="shift.id" border elevation="0"
-                                rounded="lg" class="mb-3 shift-card pa-3 pa-sm-4 bg-white cursor-pointer"
-                                :style="`border-left: 4px solid ${!shift.employeeId ? '#E11D48' : getRoleColor(shift.roleName)} !important;`"
-                                @click.stop="editExistingShift(shift)">
-                                <div class="d-flex justify-space-between align-start mb-2 mb-sm-3">
-                                    <span class="font-weight-bold text-body-2 text-sm-body-1">{{ shift.startTime }} - {{
-                                        shift.endTime }}</span>
+                    <div v-if="shiftsForDay(baseDateStr).length === 0"
+                        class="text-center py-10 bg-grey-lighten-4 rounded-lg border-dashed">
+                        <v-icon color="grey" size="48" class="mb-2">mdi-calendar-blank</v-icon>
+                        <p class="text-grey-darken-1 font-weight-medium">Aucun shift planifié pour cette journée.</p>
+                    </div>
+
+                    <v-list v-else class="bg-transparent" lines="two">
+                        <v-card v-for="shift in shiftsForDay(baseDateStr)" :key="shift.id" border elevation="0"
+                            rounded="lg"
+                            class="mb-3 px-4 py-3 d-flex flex-column flex-sm-row align-sm-center justify-space-between shift-card-horizontal cursor-pointer"
+                            :class="{ 'unassigned-border': !shift.employeeId }"
+                            :style="`border-left: 4px solid ${!shift.employeeId ? '#E11D48' : getRoleColor(shift.roleName)} !important;`"
+                            @click="editExistingShift(shift)">
+
+                            <div class="d-flex align-center mb-3 mb-sm-0">
+                                <div class="time-block mr-4 mr-sm-6 text-center">
+                                    <div class="text-subtitle-1 text-sm-h6 font-weight-bold">{{ shift.startTime }}</div>
+                                    <div class="text-caption text-grey-darken-1">{{ shift.endTime }}</div>
                                 </div>
-                                <div v-if="shift.employeeId" class="d-flex align-center mt-2">
-                                    <v-avatar color="grey-lighten-3" size="24" rounded="sm"
-                                        class="mr-2 mr-sm-3 text-caption font-weight-bold">
-                                        {{ shift.employeeName.charAt(0) }}
-                                    </v-avatar>
-                                    <span
-                                        class="text-caption text-sm-body-2 font-weight-medium text-grey-darken-3 text-truncate">{{
-                                            shift.employeeName }}</span>
+                                <v-avatar :color="!shift.employeeId ? 'error-lighten-4' : 'grey-lighten-3'" size="40"
+                                    class="mr-3 mr-sm-4 rounded-lg">
+                                    <span v-if="shift.employeeId" class="font-weight-bold">{{
+                                        shift.employeeName.charAt(0) }}</span>
+                                    <v-icon v-else color="error">mdi-account-alert</v-icon>
+                                </v-avatar>
+                                <div>
+                                    <div class="font-weight-bold text-body-2 text-sm-body-1"
+                                        :class="{ 'text-error': !shift.employeeId }">
+                                        {{ shift.employeeName || 'Shift Non Assigné' }}
+                                    </div>
+                                    <div class="text-caption text-grey-darken-1">{{ shift.roleName }}</div>
                                 </div>
-                                <div v-else
-                                    class="d-flex align-center mt-2 text-error bg-red-lighten-5 pa-1 pa-sm-2 rounded">
-                                    <v-icon size="small" class="mr-1 mr-sm-2">mdi-alert-circle-outline</v-icon>
-                                    <span class="text-caption font-weight-bold">Non assigné</span>
-                                </div>
-                            </v-card>
+                            </div>
+                            <v-chip :color="getRoleColor(shift.roleName)" variant="tonal" size="small"
+                                class="font-weight-bold align-self-start align-self-sm-center">{{ shift.status
+                                }}</v-chip>
+                        </v-card>
+                    </v-list>
+                </v-card>
+            </div>
+
+            <div v-else-if="currentView === 'week'" class="week-view">
+                <div class="d-flex flex-nowrap gap-4 overflow-x-auto custom-scrollbar pb-6 pt-2"
+                    style="min-height: 60vh;">
+                    <div v-for="day in weekDays" :key="day.date" class="day-column d-flex flex-column">
+                        <div class="day-header text-center py-2 py-sm-3 mb-3 rounded-lg border bg-white flex-shrink-0"
+                            :class="{ 'border-primary bg-primary-lighten-5': day.isToday }">
+                            <div class="text-uppercase text-caption font-weight-bold text-grey-darken-1 mb-1">{{
+                                day.dayName }}</div>
+                            <div class="text-h6 font-weight-bold" :class="{ 'text-primary': day.isToday }">{{
+                                day.dayNumber }}</div>
                         </div>
 
-                        <v-btn variant="outlined" color="grey-darken-1"
-                            class="w-100 border-dashed mt-auto bg-transparent" rounded="lg" prepend-icon="mdi-plus"
-                            height="40" @click="openNewShiftModal(day.date)">
-                            Ajouter
-                        </v-btn>
+                        <div class="shifts-container d-flex flex-column flex-grow-1">
+                            <div class="flex-grow-1 mb-2">
+                                <v-card v-for="shift in shiftsForDay(day.date)" :key="shift.id" border elevation="0"
+                                    rounded="lg" class="mb-3 shift-card pa-3 pa-sm-4 bg-white cursor-pointer"
+                                    :style="`border-left: 4px solid ${!shift.employeeId ? '#E11D48' : getRoleColor(shift.roleName)} !important;`"
+                                    @click.stop="editExistingShift(shift)">
+                                    <div class="d-flex justify-space-between align-start mb-2 mb-sm-3">
+                                        <span class="font-weight-bold text-body-2 text-sm-body-1">{{ shift.startTime }}
+                                            - {{ shift.endTime }}</span>
+                                    </div>
+                                    <div v-if="shift.employeeId" class="d-flex align-center mt-2">
+                                        <v-avatar color="grey-lighten-3" size="24" rounded="sm"
+                                            class="mr-2 mr-sm-3 text-caption font-weight-bold">
+                                            {{ shift.employeeName.charAt(0) }}
+                                        </v-avatar>
+                                        <span
+                                            class="text-caption text-sm-body-2 font-weight-medium text-grey-darken-3 text-truncate">{{
+                                            shift.employeeName }}</span>
+                                    </div>
+                                    <div v-else
+                                        class="d-flex align-center mt-2 text-error bg-red-lighten-5 pa-1 pa-sm-2 rounded">
+                                        <v-icon size="small" class="mr-1 mr-sm-2">mdi-alert-circle-outline</v-icon>
+                                        <span class="text-caption font-weight-bold">Non assigné</span>
+                                    </div>
+                                </v-card>
+                            </div>
+
+                            <v-btn variant="outlined" color="grey-darken-1"
+                                class="w-100 border-dashed mt-auto bg-transparent" rounded="lg" prepend-icon="mdi-plus"
+                                height="40" @click="openNewShiftModal(day.date)">
+                                Ajouter
+                            </v-btn>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div v-else-if="currentView === 'month'" class="month-view">
-            <v-card border elevation="0" rounded="xl" class="overflow-hidden bg-white">
-                <div class="month-grid-header border-bottom bg-grey-lighten-4">
-                    <div v-for="day in ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']" :key="day"
-                        class="pa-2 pa-sm-3 text-center text-xs text-sm-caption font-weight-bold text-grey-darken-1">
-                        {{ day }}
-                    </div>
-                </div>
-                <div class="month-grid">
-                    <div v-for="cell in monthCells" :key="cell.date" class="month-cell pa-1 pa-sm-2"
-                        :class="{ 'bg-grey-lighten-5 text-grey': !cell.isCurrentMonth, 'bg-primary-lighten-5': cell.isToday }"
-                        @click="openNewShiftModal(cell.date)">
-
-                        <div class="d-flex justify-space-between align-start mb-1 mb-sm-2">
-                            <span class="text-xs text-sm-caption font-weight-bold"
-                                :class="{ 'text-primary': cell.isToday }">{{ cell.dayNumber }}</span>
-                            <v-icon v-if="shiftsForDay(cell.date).some(s => !s.employeeId)" color="error" size="x-small"
-                                class="d-none d-sm-flex">mdi-circle</v-icon>
-                        </div>
-
-                        <div class="d-flex flex-column gap-1">
-                            <div v-for="shift in shiftsForDay(cell.date).slice(0, 3)" :key="shift.id"
-                                class="text-truncate px-1 px-sm-2 rounded-sm text-micro text-sm-xs font-weight-medium cursor-pointer"
-                                :style="`background-color: ${!shift.employeeId ? '#FFE4E6' : '#F1F5F9'}; color: ${!shift.employeeId ? '#E11D48' : '#334155'}; padding: 2px 4px;`"
-                                @click.stop="editExistingShift(shift)">
-                                <span class="d-none d-sm-inline">{{ shift.startTime }}</span>
-                                {{ shift.employeeName ? shift.employeeName.split(' ')[0] : 'Vide' }}
-                            </div>
-                            <div v-if="shiftsForDay(cell.date).length > 3"
-                                class="text-micro text-grey-darken-1 pl-1 mt-1">
-                                +{{ shiftsForDay(cell.date).length - 3 }} <span class="d-none d-sm-inline">autres</span>
-                            </div>
+            <div v-else-if="currentView === 'month'" class="month-view">
+                <v-card border elevation="0" rounded="xl" class="overflow-hidden bg-white">
+                    <div class="month-grid-header border-bottom bg-grey-lighten-4">
+                        <div v-for="day in ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']" :key="day"
+                            class="pa-2 pa-sm-3 text-center text-xs text-sm-caption font-weight-bold text-grey-darken-1">
+                            {{ day }}
                         </div>
                     </div>
-                </div>
-            </v-card>
+                    <div class="month-grid">
+                        <div v-for="cell in monthCells" :key="cell.date" class="month-cell pa-1 pa-sm-2"
+                            :class="{ 'bg-grey-lighten-5 text-grey': !cell.isCurrentMonth, 'bg-primary-lighten-5': cell.isToday }"
+                            @click="openNewShiftModal(cell.date)">
+
+                            <div class="d-flex justify-space-between align-start mb-1 mb-sm-2">
+                                <span class="text-xs text-sm-caption font-weight-bold"
+                                    :class="{ 'text-primary': cell.isToday }">{{ cell.dayNumber }}</span>
+                                <v-icon v-if="shiftsForDay(cell.date).some(s => !s.employeeId)" color="error"
+                                    size="x-small" class="d-none d-sm-flex">mdi-circle</v-icon>
+                            </div>
+
+                            <div class="d-flex flex-column gap-1">
+                                <div v-for="shift in shiftsForDay(cell.date).slice(0, 3)" :key="shift.id"
+                                    class="text-truncate px-1 px-sm-2 rounded-sm text-micro text-sm-xs font-weight-medium cursor-pointer"
+                                    :style="`background-color: ${!shift.employeeId ? '#FFE4E6' : '#F1F5F9'}; color: ${!shift.employeeId ? '#E11D48' : '#334155'}; padding: 2px 4px;`"
+                                    @click.stop="editExistingShift(shift)">
+                                    <span class="d-none d-sm-inline">{{ shift.startTime }}</span>
+                                    {{ shift.employeeName ? shift.employeeName.split(' ')[0] : 'Vide' }}
+                                </div>
+                                <div v-if="shiftsForDay(cell.date).length > 3"
+                                    class="text-micro text-grey-darken-1 pl-1 mt-1">
+                                    +{{ shiftsForDay(cell.date).length - 3 }} <span
+                                        class="d-none d-sm-inline">autres</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </v-card>
+            </div>
         </div>
 
         <v-dialog v-model="shiftDialog" max-width="500" persistent>
@@ -249,7 +268,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useScheduleStore } from '../stores/scheduleStore'
 import { useEmployeeStore } from '../stores/employeeStore'
 import { useRoleStore } from '../stores/roleStore'
@@ -259,19 +278,17 @@ const employeeStore = useEmployeeStore()
 const roleStore = useRoleStore()
 
 const currentView = ref('week')
-const baseDate = ref(new Date('2023-10-24'))
-const baseDateStr = computed(() => baseDate.value.toISOString().split('T')[0])
+const baseDate = ref(new Date())
+const baseDateStr = computed(() => {
+    const d = baseDate.value
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+})
 
 const deleteConfirmDialog = ref(false)
 const snackbar = ref({ show: false, text: '', color: 'success', icon: 'mdi-check-circle' })
 
 const showNotification = (text, type = 'success') => {
-    snackbar.value = {
-        show: true,
-        text,
-        color: type,
-        icon: type === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'
-    }
+    snackbar.value = { show: true, text, color: type, icon: type === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }
 }
 
 const navigate = (direction) => {
@@ -280,6 +297,58 @@ const navigate = (direction) => {
     else if (currentView.value === 'week') newDate.setDate(newDate.getDate() + (direction * 7))
     else if (currentView.value === 'month') newDate.setMonth(newDate.getMonth() + direction)
     baseDate.value = newDate
+}
+
+const weekDays = computed(() => {
+    const days = []
+    const startOfWeek = new Date(baseDate.value)
+    const day = startOfWeek.getDay()
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1)
+    startOfWeek.setDate(diff)
+
+    const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+    for (let i = 0; i < 7; i++) {
+        const currentDate = new Date(startOfWeek)
+        currentDate.setDate(startOfWeek.getDate() + i)
+
+        const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`
+
+        const today = new Date()
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+        days.push({
+            date: dateString,
+            dayName: dayNames[currentDate.getDay()],
+            dayNumber: currentDate.getDate(),
+            isToday: dateString === todayStr
+        })
+    }
+    return days
+})
+
+const currentSchedule = computed(() => {
+    const dateToCheck = baseDateStr.value
+    return scheduleStore.schedules.find(s => dateToCheck >= s.start_date && dateToCheck <= s.end_date)
+})
+
+const createNewSchedule = async () => {
+    if (weekDays.value.length === 0) return
+    const start = weekDays.value[0].date
+    const end = weekDays.value[6].date
+    const dateObj = new Date(start)
+    const name = `Semaine du ${dateObj.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}`
+
+    try {
+        await scheduleStore.createSchedule({
+            name: name,
+            start_date: start,
+            end_date: end,
+            created_by_id: 1
+        })
+        showNotification('Planning créé avec succès !')
+    } catch (error) {
+        showNotification('Erreur lors de la création du planning', 'error')
+    }
 }
 
 const headerLabel = computed(() => {
@@ -308,27 +377,6 @@ const shiftsForDay = (dateStr) => {
     return scheduleStore.getShiftsByDate(dateStr) || []
 }
 
-const weekDays = computed(() => {
-    const days = []
-    const startOfWeek = new Date(baseDate.value)
-    const day = startOfWeek.getDay()
-    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1)
-    startOfWeek.setDate(diff)
-    const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
-    for (let i = 0; i < 7; i++) {
-        const currentDate = new Date(startOfWeek)
-        currentDate.setDate(startOfWeek.getDate() + i)
-        const dateString = currentDate.toISOString().split('T')[0]
-        days.push({
-            date: dateString,
-            dayName: dayNames[currentDate.getDay()],
-            dayNumber: currentDate.getDate(),
-            isToday: dateString === new Date().toISOString().split('T')[0]
-        })
-    }
-    return days
-})
-
 const monthCells = computed(() => {
     const cells = []
     const year = baseDate.value.getFullYear()
@@ -337,12 +385,15 @@ const monthCells = computed(() => {
     let startDayOfWeek = firstDayOfMonth.getDay()
     if (startDayOfWeek === 0) startDayOfWeek = 7
     const startDate = new Date(year, month, 1 - (startDayOfWeek - 1))
-    const todayStr = new Date().toISOString().split('T')[0]
+
+    const today = new Date()
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
     for (let i = 0; i < 42; i++) {
         const d = new Date(startDate)
         d.setDate(startDate.getDate() + i)
-        const dateString = d.toISOString().split('T')[0]
+        const dateString = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
         cells.push({
             date: dateString,
             dayNumber: d.getDate(),
@@ -359,8 +410,8 @@ const editedShiftId = ref(null)
 
 const defaultShift = {
     date: '',
-    startTime: '18:00',
-    endTime: '23:30',
+    startTime: '09:00',
+    endTime: '17:00',
     roleId: null,
     employeeId: null
 }
@@ -387,7 +438,7 @@ const closeShiftModal = () => {
     }, 300)
 }
 
-const saveShift = () => {
+const saveShift = async () => {
     const selectedRole = roleStore.roles.find(r => r.id === editedShift.value.roleId)
     const selectedEmployee = employeeStore.employees.find(e => e.id === editedShift.value.employeeId)
 
@@ -397,20 +448,28 @@ const saveShift = () => {
         employeeName: selectedEmployee ? `${selectedEmployee.firstName} ${selectedEmployee.lastName}` : null
     }
 
-    if (isEditing.value && editedShiftId.value) {
-        scheduleStore.updateShift(editedShiftId.value, shiftData)
-        showNotification('Shift modifié avec succès')
-    } else {
-        scheduleStore.addShift(shiftData)
-        showNotification('Nouveau shift ajouté')
+    try {
+        if (isEditing.value && editedShiftId.value) {
+            await scheduleStore.updateShift(editedShiftId.value, shiftData)
+            showNotification('Shift modifié avec succès')
+        } else {
+            await scheduleStore.addShift(shiftData)
+            showNotification('Nouveau shift ajouté')
+        }
+        closeShiftModal()
+    } catch (err) {
+        showNotification("Erreur lors de l'enregistrement du shift", 'error')
     }
-    closeShiftModal()
 }
 
-const executeDelete = () => {
+const executeDelete = async () => {
     if (editedShiftId.value) {
-        scheduleStore.deleteShift(editedShiftId.value)
-        showNotification('Shift supprimé', 'error')
+        try {
+            await scheduleStore.deleteShift(editedShiftId.value)
+            showNotification('Shift supprimé', 'error')
+        } catch (err) {
+            showNotification('Erreur lors de la suppression', 'error')
+        }
     }
     deleteConfirmDialog.value = false
     closeShiftModal()
@@ -426,6 +485,14 @@ const getRoleColor = (role) => {
     }
     return colors[role] || '#94A3B8'
 }
+
+onMounted(async () => {
+    if (roleStore.roles.length === 0) await roleStore.fetchRoles()
+    if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
+
+    await scheduleStore.fetchSchedules()
+    if (scheduleStore.shifts.length === 0) await scheduleStore.fetchWeeklyShifts()
+})
 </script>
 
 <style scoped>
