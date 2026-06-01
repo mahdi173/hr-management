@@ -76,11 +76,11 @@
           <template v-slot:activator="{ props }">
             <v-avatar v-bind="props" color="primary-lighten-4" size="40"
               class="mr-4 mr-sm-6 cursor-pointer hover-scale">
-              <span class="text-primary font-weight-bold">LM</span>
+              <span class="text-primary font-weight-bold">{{ authStore.userInitials }}</span>
             </v-avatar>
           </template>
           <v-list rounded="lg" elevation="2" min-width="150">
-            <v-list-item @click="handleLogout" prepend-icon="mdi-logout" title="Déconnexion" class="text-error">
+            <v-list-item @click="authStore.logout()" prepend-icon="mdi-logout" title="Déconnexion" class="text-error">
             </v-list-item>
           </v-list>
         </v-menu>
@@ -96,15 +96,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useEmployeeStore } from './stores/employeeStore'
 import { useScheduleStore } from './stores/scheduleStore'
+import { useAuthStore } from './stores/authStore'
 
 const router = useRouter()
 const route = useRoute()
 const employeeStore = useEmployeeStore()
 const scheduleStore = useScheduleStore()
+const authStore = useAuthStore()
 
 const drawer = ref(true)
 
@@ -160,15 +162,17 @@ const handleSearchSelect = (selectedItem) => {
   }
 }
 
-const handleLogout = () => {
-  // Clear any tokens or auth state here if needed
-  router.push('/')
-}
-
 onMounted(async () => {
   if (!isLanding.value) {
+    await authStore.fetchCurrentUser()
     if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
     if (scheduleStore.shifts.length === 0) await scheduleStore.fetchWeeklyShifts()
+  }
+})
+
+watch(isLanding, async (newVal) => {
+  if (!newVal && !authStore.isAuthenticated) {
+    await authStore.fetchCurrentUser()
   }
 })
 </script>

@@ -5,6 +5,7 @@ async function fetchWrapper(endpoint, options = {}) {
 
   const headers = {
     "Content-Type": "application/json",
+    Accept: "application/json",
     ...options.headers,
   };
 
@@ -15,15 +16,26 @@ async function fetchWrapper(endpoint, options = {}) {
   const config = {
     ...options,
     headers,
+    credentials: "include",
   };
 
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, config);
 
     if (!response.ok) {
+      if (
+        response.status === 401 &&
+        window.location.pathname !== "/" &&
+        window.location.pathname !== "/login"
+      ) {
+        window.location.href = "/login";
+      }
+
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`,
+        errorData.detail ||
+          errorData.message ||
+          `HTTP error! status: ${response.status}`,
       );
     }
 

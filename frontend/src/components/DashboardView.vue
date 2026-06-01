@@ -2,7 +2,9 @@
     <div class="dashboard">
         <div class="d-flex justify-space-between align-center mb-8 mt-2">
             <div>
-                <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">Bonjour, Louis</h1>
+                <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">
+                    Bonjour, {{ authStore.user?.first_name || 'Utilisateur' }}
+                </h1>
                 <p class="text-body-1 text-grey-darken-1">Voici l'état de votre équipe pour aujourd'hui.</p>
             </div>
             <v-btn color="primary" variant="flat" rounded="lg" size="large" prepend-icon="mdi-plus" class="px-6"
@@ -165,11 +167,17 @@
 import { computed, onMounted } from 'vue'
 import { useScheduleStore } from '../stores/scheduleStore'
 import { useAbsenceStore } from '../stores/absenceStore'
+import { useAuthStore } from '../stores/authStore'
 
 const scheduleStore = useScheduleStore()
 const absenceStore = useAbsenceStore()
+const authStore = useAuthStore()
 
-const todayStr = '2023-10-24'
+const today = new Date()
+const year = today.getFullYear()
+const month = String(today.getMonth() + 1).padStart(2, '0')
+const day = String(today.getDate()).padStart(2, '0')
+const todayStr = `${year}-${month}-${day}`
 
 const todayShifts = computed(() => {
     return scheduleStore.getShiftsByDate(todayStr) || []
@@ -209,6 +217,7 @@ const getStatusColor = (status) => {
 }
 
 onMounted(async () => {
+    if (!authStore.user) await authStore.fetchCurrentUser()
     if (scheduleStore.shifts.length === 0) await scheduleStore.fetchWeeklyShifts()
     if (absenceStore.absences.length === 0) await absenceStore.fetchAbsences()
 })

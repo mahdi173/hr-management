@@ -177,7 +177,7 @@ export const useScheduleStore = defineStore("schedule", {
 
     async deleteShift(id) {
       try {
-        await api.delete(`/api/v1/shifts/${id}`);
+        await api.delete(`/api/v1/shifts/${id}?manager_id=1&force=true`);
         this.shifts = this.shifts.filter((s) => s.id !== id);
       } catch (err) {
         console.error("Error deleting shift:", err);
