@@ -33,7 +33,7 @@ class TestScheduleViews:
         employee = employee_repo.create(Employee(
             first_name="John",
             last_name="Doe",
-            email="john.doe@example.com",
+            email="john.doe.view@example.com",
             phone="1234567890",
             role_id=1,
             contract_type_id=1,

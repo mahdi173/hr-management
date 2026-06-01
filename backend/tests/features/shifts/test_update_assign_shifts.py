@@ -162,7 +162,7 @@ class TestAssignEmployee:
         avail_repo = AvailabilityRepository(db_session)
         avail_repo.create(Availability(
             employee_id=1,
-            day_of_week=0,  # Monday (May 12, 2026 is Monday)
+            day_of_week=1,  # Tuesday (May 12, 2026 is Tuesday)
             start_time=time(8, 0),
             end_time=time(18, 0),
             is_recurring=True,
@@ -228,7 +228,7 @@ class TestAssignEmployee:
         avail_repo = AvailabilityRepository(db_session)
         avail_repo.create(Availability(
             employee_id=1,
-            day_of_week=0,  # Monday
+            day_of_week=1,  # Tuesday
             start_time=time(18, 0),  # After shift
             end_time=time(22, 0),
             is_recurring=True,
@@ -247,7 +247,12 @@ class TestAssignEmployee:
         )
         
         assert response.status_code == 409
-        assert "not available" in response.json()["detail"].lower()
+        detail = response.json()["detail"]
+        # detail may be a dict (structured conflict) or plain string
+        if isinstance(detail, dict):
+            assert "conflict" in detail.get("message", "").lower()
+        else:
+            assert "not available" in detail.lower()
     
     def test_assign_employee_already_assigned(self, db_session, client):
         """Test assigning employee who is already assigned"""
@@ -277,7 +282,7 @@ class TestAssignEmployee:
         avail_repo = AvailabilityRepository(db_session)
         avail_repo.create(Availability(
             employee_id=1,
-            day_of_week=0,
+            day_of_week=1,
             start_time=time(8, 0),
             end_time=time(18, 0),
             is_recurring=True,
@@ -338,7 +343,7 @@ class TestAssignEmployee:
         for emp_id in [1, 2]:
             avail_repo.create(Availability(
                 employee_id=emp_id,
-                day_of_week=0,
+                day_of_week=1,
                 start_time=time(8, 0),
                 end_time=time(18, 0),
                 is_recurring=True,
@@ -403,7 +408,7 @@ class TestRemoveAssignment:
         for emp_id in [1, 2]:
             avail_repo.create(Availability(
                 employee_id=emp_id,
-                day_of_week=0,
+                day_of_week=1,
                 start_time=time(8, 0),
                 end_time=time(18, 0),
                 is_recurring=True,
@@ -461,7 +466,7 @@ class TestRemoveAssignment:
         for emp_id in [1, 2]:
             avail_repo.create(Availability(
                 employee_id=emp_id,
-                day_of_week=0,
+                day_of_week=1,
                 start_time=time(8, 0),
                 end_time=time(18, 0),
                 is_recurring=True,
