@@ -1,0 +1,1 @@
+"""Delete Shift feature module"""
