@@ -4,6 +4,26 @@ _Plateforme de gestion des plannings et du personnel_
 
 ---
 
+## Phase 0 – Infrastructure & Security 🔐
+
+🎯 **Objectif :** Sécuriser l'application avec authentification et autorisation
+
+### 🔒 Authentication & Authorization
+
+- **JWT-based authentication** avec cookies HttpOnly
+- **Login/Logout** endpoints
+- **User-specific routes** (`/me` endpoints) pour données personnelles
+- **Role-based access control** (RBAC) - Admin, Manager, Employee
+- **Resource ownership validation** - Utilisateurs accèdent uniquement à leurs données
+
+**📄 Documentation détaillée :** Voir [backend/AUTH_ROADMAP.md](backend/AUTH_ROADMAP.md) et [backend/AUTH_IMPLEMENTATION_GUIDE.md](backend/AUTH_IMPLEMENTATION_GUIDE.md)
+
+**Estimation :** ~40 heures de développement
+
+✅ **Livrable :** Système d'authentification complet et routes protégées par rôles
+
+---
+
 ## Phase 1 – Foundations (MVP Fonctionnel)
 
 🎯 **Objectif :** disposer d’un système utilisable, sans intelligence artificielle.
