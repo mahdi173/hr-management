@@ -50,6 +50,14 @@ def db_session():
         session.add(ContractType(id=2, name="CDD", weekly_hours=35.0, is_active=True))
         session.commit()
     
+    # Create employees if they don't exist
+    from app.models.employee import Employee
+    if not session.query(Employee).filter(Employee.id == 1).first():
+        session.add(Employee(id=1, first_name="John", last_name="Doe", email="john.doe@example.com", role_id=2, contract_type_id=1, is_active=True))
+    if not session.query(Employee).filter(Employee.id == 2).first():
+        session.add(Employee(id=2, first_name="Jane", last_name="Smith", email="jane.smith@example.com", role_id=2, contract_type_id=1, is_active=True))
+    session.commit()
+    
     yield session
     
     session.close()

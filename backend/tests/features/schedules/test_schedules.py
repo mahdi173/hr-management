@@ -9,7 +9,7 @@ def test_create_schedule_success(client, db_session):
     db_session.commit()
     
     response = client.post(
-        "/schedules/",
+        "/api/v1/schedules/",
         json={
             "name": "July Schedule",
             "start_date": "2026-07-01",
@@ -31,6 +31,6 @@ def test_list_schedules(client, db_session):
     db_session.add(s1)
     db_session.commit()
     
-    response = client.get("/schedules/")
+    response = client.get("/api/v1/schedules/")
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()) >= 1

@@ -26,7 +26,7 @@ class TestGetEmployeeHours:
         avail_repo = AvailabilityRepository(db_session)
         avail_repo.create(Availability(
             employee_id=1,
-            day_of_week=0,  # Monday
+            day_of_week=1,  # Tuesday
             start_time=time(8, 0),
             end_time=time(20, 0),
             is_recurring=True,
@@ -34,9 +34,9 @@ class TestGetEmployeeHours:
         ))
         avail_repo.create(Availability(
             employee_id=1,
-            day_of_week=1,  # Tuesday
+            day_of_week=2,  # Wednesday
             start_time=time(8, 0),
-            end_time=time(20, 0),
+            end_time=time(23, 0),
             is_recurring=True,
             is_active=True
         ))
@@ -177,7 +177,7 @@ class TestGetEmployeeOvertime:
         avail_repo = AvailabilityRepository(db_session)
         avail_repo.create(Availability(
             employee_id=1,
-            day_of_week=0,
+            day_of_week=1,  # Tuesday
             start_time=time(8, 0),
             end_time=time(23, 0),
             is_recurring=True,
@@ -334,7 +334,7 @@ class TestGetEmployeeOvertime:
         avail_repo = AvailabilityRepository(db_session)
         avail_repo.create(Availability(
             employee_id=1,
-            day_of_week=0,
+            day_of_week=1,  # Tuesday
             start_time=time(8, 0),
             end_time=time(18, 0),
             is_recurring=True,

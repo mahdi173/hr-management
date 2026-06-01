@@ -2,6 +2,7 @@
 Absence repository - handles data access for Absence and AbsenceType models.
 """
 from typing import Optional, List
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from datetime import date
 
