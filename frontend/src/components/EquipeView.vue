@@ -1,7 +1,7 @@
 <template>
     <div class="equipe-view">
-        <div class="d-flex flex-column flex-md-row justify-space-between align-md-center mb-6 mt-2">
-            <div>
+        <div class="d-flex flex-column flex-lg-row justify-space-between align-lg-center mb-6 mt-2">
+            <div class="mb-4 mb-lg-0">
                 <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">Équipe</h1>
                 <p class="text-body-1 text-grey-darken-1">Consultez les collaborateurs et leurs informations.</p>
             </div>
@@ -12,7 +12,7 @@
 
                 <v-text-field v-model="search" prepend-inner-icon="mdi-magnify" placeholder="Rechercher un membre..."
                     variant="outlined" density="compact" hide-details bg-color="white" rounded="lg"
-                    style="min-width: 280px;"></v-text-field>
+                    class="flex-grow-1"></v-text-field>
 
                 <v-btn v-if="authStore.isManager" color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus"
                     class="ml-4 px-5 font-weight-bold" @click="openNewModal">
@@ -196,7 +196,7 @@
                 <h3 class="text-h6 font-weight-bold mb-2">Supprimer ce collaborateur ?</h3>
                 <p class="text-body-2 text-grey-darken-1 mb-6 px-4">
                     Êtes-vous sûr de vouloir supprimer <strong>{{ itemToDelete?.firstName }} {{ itemToDelete?.lastName
-                    }}</strong> ? Cette action retirera également cette personne des plannings futurs.
+                        }}</strong> ? Cette action retirera également cette personne des plannings futurs.
                 </p>
                 <div class="d-flex justify-center mb-2">
                     <v-btn variant="text" color="grey-darken-2" class="mr-3 font-weight-medium" rounded="lg"
@@ -233,7 +233,6 @@ const authStore = useAuthStore()
 
 const search = ref('')
 const showInactive = ref(false)
-
 const dialog = ref(false)
 const dialogDelete = ref(false)
 const dialogAvailability = ref(false)
@@ -241,6 +240,8 @@ const dialogAvailability = ref(false)
 const editedIndex = ref(-1)
 const itemToDelete = ref(null)
 const currentEmployeeForAvailability = ref(null)
+
+const snackbar = ref({ show: false, text: '', color: 'success', icon: 'mdi-check-circle' })
 
 const snackbar = ref({ show: false, text: '', color: 'success', icon: 'mdi-check-circle' })
 
@@ -399,6 +400,10 @@ const displayedEmployees = computed(() => {
 </script>
 
 <style scoped>
+.gap-3 {
+    gap: 0.75rem;
+}
+
 :deep(.v-data-table-header__content) {
     font-weight: 700;
     color: #64748B;
