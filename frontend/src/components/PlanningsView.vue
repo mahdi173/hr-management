@@ -3,7 +3,7 @@
         <div class="d-flex flex-column flex-lg-row justify-space-between align-lg-center mb-6 mt-2">
             <div class="mb-4 mb-lg-0">
                 <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">Plannings</h1>
-                <p class="text-body-1 text-grey-darken-1">Gérez les services et assignez votre équipe.</p>
+                <p class="text-body-1 text-grey-darken-1">Consultez les services et l'assignation de l'équipe.</p>
             </div>
 
             <div class="d-flex flex-column flex-sm-row align-stretch align-sm-center gap-4">
@@ -33,10 +33,9 @@
                 <v-icon color="primary" size="40">mdi-calendar-plus</v-icon>
             </v-avatar>
             <h2 class="text-h5 font-weight-bold mb-2">Aucun planning pour cette période</h2>
-            <p class="text-grey-darken-1 mb-6">Vous devez initialiser la semaine avant de pouvoir y ajouter des shifts.
-            </p>
-            <v-btn color="primary" variant="flat" rounded="lg" size="large" prepend-icon="mdi-plus"
-                @click="createNewSchedule" :loading="scheduleStore.isLoading">
+            <p class="text-grey-darken-1 mb-6">La semaine n'a pas encore été initialisée.</p>
+            <v-btn v-if="authStore.isManager" color="primary" variant="flat" rounded="lg" size="large"
+                prepend-icon="mdi-plus" @click="createNewSchedule" :loading="scheduleStore.isLoading">
                 Créer le planning de la semaine
             </v-btn>
         </div>
@@ -46,8 +45,8 @@
                 <v-card border elevation="0" rounded="xl" class="pa-4 pa-md-6 bg-white">
                     <div class="d-flex flex-column flex-sm-row justify-space-between align-sm-center mb-6 gap-3">
                         <h2 class="text-h6 font-weight-bold">{{ getFullDateLabel(baseDate) }}</h2>
-                        <v-btn color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus"
-                            @click="openNewShiftModal(baseDateStr)">
+                        <v-btn v-if="authStore.isManager" color="primary" variant="flat" rounded="lg"
+                            prepend-icon="mdi-plus" @click="openNewShiftModal(baseDateStr)">
                             Ajouter un shift
                         </v-btn>
                     </div>
@@ -61,10 +60,10 @@
                     <v-list v-else class="bg-transparent" lines="two">
                         <v-card v-for="shift in shiftsForDay(baseDateStr)" :key="shift.id" border elevation="0"
                             rounded="lg"
-                            class="mb-3 px-4 py-3 d-flex flex-column flex-sm-row align-sm-center justify-space-between shift-card-horizontal cursor-pointer"
-                            :class="{ 'unassigned-border': !shift.employeeId }"
+                            class="mb-3 px-4 py-3 d-flex flex-column flex-sm-row align-sm-center justify-space-between shift-card-horizontal"
+                            :class="{ 'unassigned-border': !shift.employeeId, 'cursor-pointer': authStore.isManager }"
                             :style="`border-left: 4px solid ${!shift.employeeId ? '#E11D48' : getRoleColor(shift.roleName)} !important;`"
-                            @click="editExistingShift(shift)">
+                            @click="authStore.isManager ? editExistingShift(shift) : null">
 
                             <div class="d-flex align-center mb-3 mb-sm-0">
                                 <div class="time-block mr-4 mr-sm-6 text-center">
@@ -108,9 +107,10 @@
                         <div class="shifts-container d-flex flex-column flex-grow-1">
                             <div class="flex-grow-1 mb-2">
                                 <v-card v-for="shift in shiftsForDay(day.date)" :key="shift.id" border elevation="0"
-                                    rounded="lg" class="mb-3 shift-card pa-3 pa-sm-4 bg-white cursor-pointer"
+                                    rounded="lg" class="mb-3 shift-card pa-3 pa-sm-4 bg-white"
+                                    :class="{ 'cursor-pointer': authStore.isManager }"
                                     :style="`border-left: 4px solid ${!shift.employeeId ? '#E11D48' : getRoleColor(shift.roleName)} !important;`"
-                                    @click.stop="editExistingShift(shift)">
+                                    @click.stop="authStore.isManager ? editExistingShift(shift) : null">
                                     <div class="d-flex justify-space-between align-start mb-2 mb-sm-3">
                                         <span class="font-weight-bold text-body-2 text-sm-body-1">{{ shift.startTime }}
                                             - {{ shift.endTime }}</span>
@@ -122,7 +122,7 @@
                                         </v-avatar>
                                         <span
                                             class="text-caption text-sm-body-2 font-weight-medium text-grey-darken-3 text-truncate">{{
-                                            shift.employeeName }}</span>
+                                                shift.employeeName }}</span>
                                     </div>
                                     <div v-else
                                         class="d-flex align-center mt-2 text-error bg-red-lighten-5 pa-1 pa-sm-2 rounded">
@@ -132,7 +132,7 @@
                                 </v-card>
                             </div>
 
-                            <v-btn variant="outlined" color="grey-darken-1"
+                            <v-btn v-if="authStore.isManager" variant="outlined" color="grey-darken-1"
                                 class="w-100 border-dashed mt-auto bg-transparent" rounded="lg" prepend-icon="mdi-plus"
                                 height="40" @click="openNewShiftModal(day.date)">
                                 Ajouter
@@ -153,7 +153,7 @@
                     <div class="month-grid">
                         <div v-for="cell in monthCells" :key="cell.date" class="month-cell pa-1 pa-sm-2"
                             :class="{ 'bg-grey-lighten-5 text-grey': !cell.isCurrentMonth, 'bg-primary-lighten-5': cell.isToday }"
-                            @click="openNewShiftModal(cell.date)">
+                            @click="authStore.isManager ? openNewShiftModal(cell.date) : null">
 
                             <div class="d-flex justify-space-between align-start mb-1 mb-sm-2">
                                 <span class="text-xs text-sm-caption font-weight-bold"
@@ -164,9 +164,10 @@
 
                             <div class="d-flex flex-column gap-1">
                                 <div v-for="shift in shiftsForDay(cell.date).slice(0, 3)" :key="shift.id"
-                                    class="text-truncate px-1 px-sm-2 rounded-sm text-micro text-sm-xs font-weight-medium cursor-pointer"
+                                    class="text-truncate px-1 px-sm-2 rounded-sm text-micro text-sm-xs font-weight-medium"
+                                    :class="{ 'cursor-pointer': authStore.isManager }"
                                     :style="`background-color: ${!shift.employeeId ? '#FFE4E6' : '#F1F5F9'}; color: ${!shift.employeeId ? '#E11D48' : '#334155'}; padding: 2px 4px;`"
-                                    @click.stop="editExistingShift(shift)">
+                                    @click.stop="authStore.isManager ? editExistingShift(shift) : null">
                                     <span class="d-none d-sm-inline">{{ shift.startTime }}</span>
                                     {{ shift.employeeName ? shift.employeeName.split(' ')[0] : 'Vide' }}
                                 </div>
@@ -272,10 +273,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useScheduleStore } from '../stores/scheduleStore'
 import { useEmployeeStore } from '../stores/employeeStore'
 import { useRoleStore } from '../stores/roleStore'
+import { useAuthStore } from '../stores/authStore'
 
 const scheduleStore = useScheduleStore()
 const employeeStore = useEmployeeStore()
 const roleStore = useRoleStore()
+const authStore = useAuthStore()
 
 const currentView = ref('week')
 const baseDate = ref(new Date())
@@ -343,7 +346,7 @@ const createNewSchedule = async () => {
             name: name,
             start_date: start,
             end_date: end,
-            created_by_id: 1
+            created_by_id: authStore.user?.id || 1
         })
         showNotification('Planning créé avec succès !')
     } catch (error) {
@@ -487,6 +490,7 @@ const getRoleColor = (role) => {
 }
 
 onMounted(async () => {
+    if (!authStore.user) await authStore.fetchCurrentUser()
     if (roleStore.roles.length === 0) await roleStore.fetchRoles()
     if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
 
@@ -576,7 +580,6 @@ onMounted(async () => {
 .month-cell {
     background-color: #FFFFFF;
     transition: background-color 0.2s;
-    cursor: pointer;
 }
 
 .month-cell:hover {

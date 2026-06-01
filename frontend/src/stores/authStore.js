@@ -13,7 +13,16 @@ export const useAuthStore = defineStore("auth", {
   getters: {
     userInitials: (state) => {
       if (!state.user || !state.user.first_name) return "?";
-      return `${state.user.first_name.charAt(0)}${state.user.last_name ? state.user.last_name.charAt(0) : ""}`;
+
+      const first = state.user.first_name.charAt(0);
+      const last = state.user.last_name ? state.user.last_name.charAt(0) : "";
+      return `${first}${last}`;
+    },
+    isManager: (state) => {
+      return state.user?.role === "Manager" || state.user?.role === "Admin";
+    },
+    isEmployee: (state) => {
+      return state.user?.role === "Employee" || state.user?.role === "Serveur";
     },
   },
 

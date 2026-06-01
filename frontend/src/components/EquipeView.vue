@@ -3,17 +3,18 @@
         <div class="d-flex flex-column flex-md-row justify-space-between align-md-center mb-6 mt-2">
             <div>
                 <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">Équipe</h1>
-                <p class="text-body-1 text-grey-darken-1">Gérez vos collaborateurs et leurs contrats.</p>
+                <p class="text-body-1 text-grey-darken-1">Consultez les collaborateurs et leurs informations.</p>
             </div>
             <div class="mt-4 mt-md-0 d-flex align-center">
-                <v-switch v-model="showInactive" label="Afficher les inactifs" color="primary" hide-details
-                    density="compact" class="mr-4 text-body-2 font-weight-medium"></v-switch>
+                <v-switch v-if="authStore.isManager" v-model="showInactive" label="Afficher les inactifs"
+                    color="primary" hide-details density="compact"
+                    class="mr-4 text-body-2 font-weight-medium"></v-switch>
 
                 <v-text-field v-model="search" prepend-inner-icon="mdi-magnify" placeholder="Rechercher un membre..."
                     variant="outlined" density="compact" hide-details bg-color="white" rounded="lg"
                     style="min-width: 280px;"></v-text-field>
 
-                <v-btn color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus"
+                <v-btn v-if="authStore.isManager" color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus"
                     class="ml-4 px-5 font-weight-bold" @click="openNewModal">
                     Ajouter
                 </v-btn>
@@ -55,13 +56,14 @@
 
                 <template v-slot:item.actions="{ item }">
                     <div class="d-flex justify-end pr-2">
-                        <v-btn icon="mdi-calendar-clock" variant="text" size="small" color="secondary" class="mr-1"
+                        <v-btn v-if="authStore.isManager || item.id === authStore.user?.employee_id"
+                            icon="mdi-calendar-clock" variant="text" size="small" color="secondary" class="mr-1"
                             title="Gérer les disponibilités" @click="openAvailabilityModal(item)"></v-btn>
 
-                        <v-btn icon="mdi-pencil-outline" variant="text" size="small" color="primary" class="mr-1"
-                            @click="editItem(item)"></v-btn>
-                        <v-btn icon="mdi-delete-outline" variant="text" size="small" color="error"
-                            @click="confirmDelete(item)"></v-btn>
+                        <v-btn v-if="authStore.isManager" icon="mdi-pencil-outline" variant="text" size="small"
+                            color="primary" class="mr-1" @click="editItem(item)"></v-btn>
+                        <v-btn v-if="authStore.isManager" icon="mdi-delete-outline" variant="text" size="small"
+                            color="error" @click="confirmDelete(item)"></v-btn>
                     </div>
                 </template>
             </v-data-table>
@@ -221,11 +223,13 @@ import { useEmployeeStore } from '../stores/employeeStore'
 import { useRoleStore } from '../stores/roleStore'
 import { useContractStore } from '../stores/contractStore'
 import { useAvailabilityStore } from '../stores/availabilityStore'
+import { useAuthStore } from '../stores/authStore'
 
 const employeeStore = useEmployeeStore()
 const roleStore = useRoleStore()
 const contractStore = useContractStore()
 const availabilityStore = useAvailabilityStore()
+const authStore = useAuthStore()
 
 const search = ref('')
 const showInactive = ref(false)
@@ -268,19 +272,16 @@ const daysOfWeek = [
     { name: 'Dimanche', value: 6 }
 ]
 
-const headers = [
-    {
-        title: 'Collaborateur',
-        key: 'name',
-        align: 'start',
-        sortable: true,
-        value: item => `${item.firstName} ${item.lastName} ${item.email}`
-    },
-    { title: 'Rôle', key: 'role', align: 'start' },
-    { title: 'Contrat', key: 'contract', align: 'start' },
-    { title: 'Statut', key: 'status', align: 'center' },
-    { title: 'Actions', key: 'actions', align: 'end', sortable: false },
-]
+const headers = computed(() => {
+    const base = [
+        { title: 'Collaborateur', key: 'name', align: 'start', sortable: true, value: item => `${item.firstName} ${item.lastName} ${item.email}` },
+        { title: 'Rôle', key: 'role', align: 'start' },
+        { title: 'Contrat', key: 'contract', align: 'start' },
+        { title: 'Statut', key: 'status', align: 'center' },
+    ]
+    base.push({ title: 'Actions', key: 'actions', align: 'end', sortable: false })
+    return base
+})
 
 const formTitle = computed(() => {
     return editedIndex.value === -1 ? 'Nouveau collaborateur' : 'Modifier collaborateur'
@@ -297,12 +298,7 @@ const getDayName = (dayValue) => {
 }
 
 const showNotification = (text, type = 'success') => {
-    snackbar.value = {
-        show: true,
-        text,
-        color: type,
-        icon: type === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'
-    }
+    snackbar.value = { show: true, text, color: type, icon: type === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }
 }
 
 const openNewModal = () => {
@@ -388,13 +384,14 @@ const deleteAvailability = async (id) => {
 }
 
 onMounted(async () => {
+    if (!authStore.user) await authStore.fetchCurrentUser()
     if (roleStore.roles.length === 0) await roleStore.fetchRoles()
     if (contractStore.contracts.length === 0) await contractStore.fetchContracts()
     if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
 })
 
 const displayedEmployees = computed(() => {
-    if (showInactive.value) {
+    if (showInactive.value && authStore.isManager) {
         return employeeStore.employees;
     }
     return employeeStore.employees.filter(emp => emp.status !== 'Inactif');

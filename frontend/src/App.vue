@@ -114,13 +114,20 @@ const isLanding = computed(() => {
   return route.path === '/' || route.path === '/login' || route.path === '/register'
 })
 
-const menuItems = ref([
-  { title: 'Tableau de bord', icon: 'mdi-view-dashboard-outline', path: '/dashboard' },
-  { title: 'Plannings', icon: 'mdi-calendar-month-outline', path: '/plannings' },
-  { title: 'Équipe', icon: 'mdi-account-group-outline', path: '/equipe' },
-  { title: 'Absences', icon: 'mdi-palm-tree', path: '/absences' },
-  { title: 'Paramètres', icon: 'mdi-cog-outline', path: '/parametres' },
-])
+const menuItems = computed(() => {
+  const baseItems = [
+    { title: 'Tableau de bord', icon: 'mdi-view-dashboard-outline', path: '/dashboard' },
+    { title: 'Plannings', icon: 'mdi-calendar-month-outline', path: '/plannings' },
+    { title: 'Équipe', icon: 'mdi-account-group-outline', path: '/equipe' },
+    { title: 'Absences', icon: 'mdi-palm-tree', path: '/absences' },
+  ]
+  
+  if (authStore.isManager) {
+    baseItems.push({ title: 'Paramètres', icon: 'mdi-cog-outline', path: '/parametres' })
+  }
+  
+  return baseItems
+})
 
 const searchQuery = ref('')
 const searchSelection = ref(null)

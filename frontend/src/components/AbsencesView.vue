@@ -3,7 +3,7 @@
         <div class="d-flex flex-column flex-lg-row justify-space-between align-lg-center mb-6 mt-2">
             <div class="mb-4 mb-lg-0">
                 <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">Absences</h1>
-                <p class="text-body-1 text-grey-darken-1">Gérez les demandes de congés et indisponibilités.</p>
+                <p class="text-body-1 text-grey-darken-1">{{ authStore.isManager ? 'Gérez les demandes de congés de l\'équipe.' : 'Gérez vos demandes de congés.' }}</p>
             </div>
 
             <div class="d-flex flex-column flex-sm-row align-stretch align-sm-center gap-3 w-100"
@@ -21,8 +21,7 @@
 
         <v-card border elevation="0" rounded="xl" class="overflow-hidden bg-white mb-6">
             <v-tabs v-model="tab" color="primary" class="border-bottom px-4 pt-2">
-                <v-tab value="pending" class="font-weight-bold text-none">En attente ({{
-                    absenceStore.pendingAbsences.length }})</v-tab>
+                <v-tab value="pending" class="font-weight-bold text-none">En attente ({{ pendingCount }})</v-tab>
                 <v-tab value="history" class="font-weight-bold text-none">Historique complet</v-tab>
             </v-tabs>
 
@@ -42,11 +41,11 @@
                 <template v-slot:item.dates="{ item }">
                     <div class="text-body-2 text-no-wrap">
                         <v-icon size="small" class="mr-1 text-grey-darken-1">mdi-calendar-start</v-icon> {{
-                        formatDate(item.startDate) }}
+                            formatDate(item.startDate) }}
                     </div>
                     <div class="text-body-2 mt-1 text-no-wrap">
                         <v-icon size="small" class="mr-1 text-grey-darken-1">mdi-calendar-end</v-icon> {{
-                        formatDate(item.endDate) }}
+                            formatDate(item.endDate) }}
                     </div>
                 </template>
 
@@ -58,7 +57,7 @@
                 </template>
 
                 <template v-slot:item.actions="{ item }">
-                    <div class="d-flex justify-end pr-2" v-if="item.status === 'En attente'">
+                    <div class="d-flex justify-end pr-2" v-if="item.status === 'En attente' && authStore.isManager">
                         <v-btn icon="mdi-check" variant="tonal" size="small" color="success" class="mr-2"
                             @click.stop="updateStatus(item, 'Approuvé')"></v-btn>
                         <v-btn icon="mdi-close" variant="tonal" size="small" color="error"
@@ -78,7 +77,7 @@
 
                 <v-card-text class="px-6 pt-4">
                     <v-row>
-                        <v-col cols="12" class="pb-1">
+                        <v-col cols="12" class="pb-1" v-if="authStore.isManager">
                             <v-select v-model="newItem.employeeId" label="Employé" :items="employeeStore.employees"
                                 item-title="firstName" item-value="id" variant="outlined" density="comfortable"
                                 color="primary"></v-select>
@@ -179,9 +178,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAbsenceStore } from '../stores/absenceStore'
 import { useEmployeeStore } from '../stores/employeeStore'
+import { useAuthStore } from '../stores/authStore'
 
 const absenceStore = useAbsenceStore()
 const employeeStore = useEmployeeStore()
+const authStore = useAuthStore()
 
 const search = ref('')
 const tab = ref('pending')
@@ -200,19 +201,30 @@ const defaultItem = {
 }
 const newItem = ref({ ...defaultItem })
 
-const headers = [
-    { title: 'Collaborateur', key: 'employeeName', align: 'start', sortable: true },
-    { title: 'Type', key: 'type', align: 'start' },
-    { title: 'Dates', key: 'dates', align: 'start', sortable: false },
-    { title: 'Statut', key: 'status', align: 'center' },
-    { title: 'Actions', key: 'actions', align: 'end', sortable: false },
-]
+const headers = computed(() => {
+    const base = [
+        { title: 'Collaborateur', key: 'employeeName', align: 'start', sortable: true },
+        { title: 'Type', key: 'type', align: 'start' },
+        { title: 'Dates', key: 'dates', align: 'start', sortable: false },
+        { title: 'Statut', key: 'status', align: 'center' }
+    ]
+    if (authStore.isManager && tab.value === 'pending') {
+        base.push({ title: 'Actions', key: 'actions', align: 'end', sortable: false })
+    }
+    return base
+})
+
+const pendingCount = computed(() => {
+    if (authStore.isManager) return absenceStore.pendingAbsences.length;
+    return absenceStore.pendingAbsences.filter(a => a.employeeId === authStore.user?.employee_id).length;
+})
 
 const displayedAbsences = computed(() => {
-    if (tab.value === 'pending') {
-        return absenceStore.pendingAbsences
+    let list = tab.value === 'pending' ? absenceStore.pendingAbsences : absenceStore.allAbsences;
+    if (!authStore.isManager) {
+        list = list.filter(a => a.employeeId === authStore.user?.employee_id);
     }
-    return absenceStore.allAbsences
+    return list;
 })
 
 const formatDate = (dateString) => {
@@ -228,16 +240,14 @@ const getStatusColor = (status) => {
 }
 
 const showNotification = (text, type = 'success') => {
-    snackbar.value = {
-        show: true,
-        text,
-        color: type,
-        icon: type === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'
-    }
+    snackbar.value = { show: true, text, color: type, icon: type === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }
 }
 
 const openNewModal = () => {
     newItem.value = { ...defaultItem }
+    if (!authStore.isManager) {
+        newItem.value.employeeId = authStore.user?.employee_id || authStore.user?.id
+    }
     dialog.value = true
 }
 
@@ -249,14 +259,28 @@ const closeModal = () => {
 }
 
 const saveItem = async () => {
-    const emp = employeeStore.employees.find(e => e.id === newItem.value.employeeId)
+    const targetId = authStore.isManager ? newItem.value.employeeId : authStore.user?.employee_id;
+
+    if (!targetId) {
+        showNotification('Erreur: ID employé introuvable', 'error');
+        return;
+    }
+
+    const emp = employeeStore.employees.find(e => e.id === targetId);
+
     const absenceData = {
         ...newItem.value,
-        employeeName: emp ? `${emp.firstName} ${emp.lastName}` : 'Inconnu'
+        employeeId: targetId,
+        employeeName: emp ? `${emp.firstName} ${emp.lastName}` : 'Moi'
     }
-    await absenceStore.addAbsence(absenceData)
-    showNotification('Demande d\'absence soumise avec succès')
-    closeModal()
+
+    try {
+        await absenceStore.addAbsence(absenceData)
+        showNotification('Demande d\'absence soumise avec succès')
+        closeModal()
+    } catch (err) {
+        showNotification('Erreur lors de la soumission', 'error')
+    }
 }
 
 const updateStatus = async (item, status) => {
@@ -270,6 +294,7 @@ const handleRowClick = (event, { item }) => {
 }
 
 onMounted(async () => {
+    if (!authStore.user) await authStore.fetchCurrentUser()
     if (absenceStore.absences.length === 0) await absenceStore.fetchAbsences()
     if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
 })
