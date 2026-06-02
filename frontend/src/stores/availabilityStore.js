@@ -94,5 +94,17 @@ export const useAvailabilityStore = defineStore("availability", {
         throw err;
       }
     },
+
+    async fetchMyAvailabilities() {
+      this.isLoading = true;
+      try {
+        const data = await api.get("/availabilities/me");
+        this.availabilities = Array.isArray(data) ? data : data.items || [];
+      } catch (err) {
+        console.error("Erreur chargement de mes disponibilités:", err);
+      } finally {
+        this.isLoading = false;
+      }
+    },
   },
 });

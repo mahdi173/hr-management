@@ -35,38 +35,38 @@
         <v-spacer></v-spacer>
 
         <v-btn icon color="grey-darken-2" class="mr-3">
-          <v-badge color="error" content="3" dot>
+          <v-badge :color="activeNotifications.length > 0 ? 'error' : 'transparent'"
+            :content="activeNotifications.length" :dot="activeNotifications.length > 0">
             <v-icon>mdi-bell-outline</v-icon>
           </v-badge>
 
           <v-menu activator="parent" location="bottom end" :close-on-content-click="false" offset="10">
             <v-card rounded="xl" border elevation="0" min-width="320" max-width="360">
-              <v-card-title
-                class="text-subtitle-1 font-weight-bold px-4 py-3 border-bottom">Notifications</v-card-title>
-              <v-list lines="two" class="pa-0">
-                <v-list-item class="px-4 py-2 hover-bg">
-                  <template v-slot:prepend>
-                    <v-avatar color="error-lighten-4" size="40" rounded="lg" class="mr-3">
-                      <v-icon color="error" size="small">mdi-alert-circle-outline</v-icon>
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title class="text-body-2 font-weight-bold">Shifts non assignés</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption">4 shifts à combler urgemment ce soir</v-list-item-subtitle>
-                </v-list-item>
+              <v-card-title class="text-subtitle-1 font-weight-bold px-4 py-3 border-bottom">
+                Notifications ({{ activeNotifications.length }})
+              </v-card-title>
 
-                <v-list-item class="px-4 py-2 hover-bg">
+              <v-list lines="two" class="pa-0" v-if="activeNotifications.length > 0">
+                <v-list-item v-for="(notif, idx) in activeNotifications" :key="idx" class="px-4 py-2 hover-bg"
+                  @click="handleNotifClick(notif)">
                   <template v-slot:prepend>
-                    <v-avatar color="warning-lighten-4" size="40" rounded="lg" class="mr-3">
-                      <v-icon color="warning" size="small">mdi-palm-tree</v-icon>
+                    <v-avatar :color="notif.color + '-lighten-4'" size="40" rounded="lg" class="mr-3">
+                      <v-icon :color="notif.color" size="small">{{ notif.icon }}</v-icon>
                     </v-avatar>
                   </template>
-                  <v-list-item-title class="text-body-2 font-weight-bold">Absence en attente</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption">Sarah Martin a demandé un congé</v-list-item-subtitle>
+                  <v-list-item-title class="text-body-2 font-weight-bold">{{ notif.title }}</v-list-item-title>
+                  <v-list-item-subtitle class="text-caption">{{ notif.subtitle }}</v-list-item-subtitle>
                 </v-list-item>
               </v-list>
-              <div class="pa-3 text-center border-top">
-                <v-btn variant="text" color="primary" size="small" class="font-weight-bold">Tout marquer comme
-                  lu</v-btn>
+
+              <div v-else class="pa-6 text-center text-grey-darken-1 text-body-2">
+                Aucune nouvelle notification
+              </div>
+
+              <div class="pa-3 text-center border-top" v-if="activeNotifications.length > 0">
+                <v-btn variant="text" color="primary" size="small" class="font-weight-bold" @click="clearNotifications">
+                  Tout marquer comme lu
+                </v-btn>
               </div>
             </v-card>
           </v-menu>
@@ -100,15 +100,18 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useEmployeeStore } from './stores/employeeStore'
 import { useScheduleStore } from './stores/scheduleStore'
+import { useAbsenceStore } from './stores/absenceStore'
 import { useAuthStore } from './stores/authStore'
 
 const router = useRouter()
 const route = useRoute()
 const employeeStore = useEmployeeStore()
 const scheduleStore = useScheduleStore()
+const absenceStore = useAbsenceStore()
 const authStore = useAuthStore()
 
 const drawer = ref(true)
+const notificationsClearedAt = ref(Date.now() - 10000)
 
 const isLanding = computed(() => {
   return route.path === '/' || route.path === '/login' || route.path === '/register'
@@ -121,13 +124,88 @@ const menuItems = computed(() => {
     { title: 'Équipe', icon: 'mdi-account-group-outline', path: '/equipe' },
     { title: 'Absences', icon: 'mdi-palm-tree', path: '/absences' },
   ]
-  
+
   if (authStore.isManager) {
     baseItems.push({ title: 'Paramètres', icon: 'mdi-cog-outline', path: '/parametres' })
   }
-  
+
   return baseItems
 })
+
+const hiddenNotifIds = ref([])
+
+const activeNotifications = computed(() => {
+  const notifs = [];
+
+  if (authStore.isManager) {
+    const unassignedCount = scheduleStore.shifts.filter(s => !s.employeeId).length;
+    if (unassignedCount > 0) {
+      notifs.push({
+        id: `unassigned_shifts_${unassignedCount}`,
+        title: 'Shifts non assignés',
+        subtitle: `${unassignedCount} shift(s) nécessitent une assignation urgente.`,
+        icon: 'mdi-alert-circle-outline',
+        color: 'error',
+        route: '/plannings'
+      });
+    }
+
+    const pendingAbsCount = absenceStore.pendingAbsences.length;
+    if (pendingAbsCount > 0) {
+      notifs.push({
+        id: `pending_absences_${pendingAbsCount}`,
+        title: 'Absences en attente',
+        subtitle: `${pendingAbsCount} demande(s) en attente de validation.`,
+        icon: 'mdi-palm-tree',
+        color: 'warning',
+        route: '/absences'
+      });
+    }
+  } else {
+    const myApproved = absenceStore.absences.filter(a => a.status === 'Approuvé' && !a.viewed);
+    if (myApproved.length > 0) {
+      notifs.push({
+        id: `approved_abs_${myApproved.length}`,
+        title: 'Absence approuvée',
+        subtitle: `Votre demande d'absence a été validée.`,
+        icon: 'mdi-check-circle-outline',
+        color: 'success',
+        route: '/absences'
+      });
+    }
+
+    const myRejected = absenceStore.absences.filter(a => a.status === 'Refusé' && !a.viewed);
+    if (myRejected.length > 0) {
+      notifs.push({
+        id: `rejected_abs_${myRejected.length}`,
+        title: 'Absence refusée',
+        subtitle: `Votre demande d'absence a été refusée.`,
+        icon: 'mdi-close-circle-outline',
+        color: 'error',
+        route: '/absences'
+      });
+    }
+  }
+
+  return notifs.filter(n => !hiddenNotifIds.value.includes(n.id));
+})
+
+const clearNotifications = () => {
+  const currentIds = activeNotifications.value.map(n => n.id);
+  hiddenNotifIds.value = [...hiddenNotifIds.value, ...currentIds];
+
+  if (!authStore.isManager) {
+    absenceStore.absences.forEach(a => {
+      if (a.status !== 'En attente') a.viewed = true;
+    })
+  }
+}
+
+const handleNotifClick = (notif) => {
+  if (notif.route) {
+    router.push(notif.route)
+  }
+}
 
 const searchQuery = ref('')
 const searchSelection = ref(null)
@@ -173,7 +251,14 @@ onMounted(async () => {
   if (!isLanding.value) {
     await authStore.fetchCurrentUser()
     if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
-    if (scheduleStore.shifts.length === 0) await scheduleStore.fetchWeeklyShifts()
+
+    if (authStore.isManager) {
+      if (scheduleStore.shifts.length === 0) await scheduleStore.fetchWeeklyShifts()
+      if (absenceStore.absences.length === 0) await absenceStore.fetchAbsences()
+    } else {
+      if (scheduleStore.shifts.length === 0) await scheduleStore.fetchMyShifts()
+      if (absenceStore.absences.length === 0) await absenceStore.fetchMyAbsences()
+    }
   }
 })
 

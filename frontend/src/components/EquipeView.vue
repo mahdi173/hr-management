@@ -355,7 +355,11 @@ const deleteItemConfirm = async () => {
 
 const openAvailabilityModal = async (item) => {
     currentEmployeeForAvailability.value = item
-    await availabilityStore.fetchAvailabilitiesByEmployee(item.id)
+    if (authStore.isManager) {
+        await availabilityStore.fetchAvailabilitiesByEmployee(item.id)
+    } else {
+        await availabilityStore.fetchMyAvailabilities()
+    }
     dialogAvailability.value = true
 }
 

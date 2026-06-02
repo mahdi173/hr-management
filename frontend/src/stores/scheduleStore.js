@@ -184,5 +184,18 @@ export const useScheduleStore = defineStore("schedule", {
         throw err;
       }
     },
+
+    async fetchMyShifts() {
+      this.isLoading = true;
+      try {
+        const data = await api.get("/api/v1/shifts/me");
+        const items = Array.isArray(data) ? data : data.items || [];
+        this.shifts = items.map(this.formatShiftForUI);
+      } catch (err) {
+        console.error("Erreur chargement de mes shifts:", err);
+      } finally {
+        this.isLoading = false;
+      }
+    },
   },
 });

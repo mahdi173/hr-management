@@ -16,6 +16,17 @@ def seed_roles(db: Session) -> None:
     """Seed default roles with existence checks"""
     default_roles = [
         {
+            "name": "Admin",
+            "description": "System administrator with full access",
+            "permissions": {
+                "can_create_schedules": True,
+                "can_approve_absences": True,
+                "can_manage_employees": True,
+                "can_view_analytics": True
+            },
+            "is_active": True
+        },
+        {
             "name": "Manager",
             "description": "Team manager with full access to scheduling and personnel management",
             "permissions": {

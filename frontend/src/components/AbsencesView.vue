@@ -215,16 +215,11 @@ const headers = computed(() => {
 })
 
 const pendingCount = computed(() => {
-    if (authStore.isManager) return absenceStore.pendingAbsences.length;
-    return absenceStore.pendingAbsences.filter(a => a.employeeId === authStore.user?.employee_id).length;
+    return absenceStore.pendingAbsences.length;
 })
 
 const displayedAbsences = computed(() => {
-    let list = tab.value === 'pending' ? absenceStore.pendingAbsences : absenceStore.allAbsences;
-    if (!authStore.isManager) {
-        list = list.filter(a => a.employeeId === authStore.user?.employee_id);
-    }
-    return list;
+    return tab.value === 'pending' ? absenceStore.pendingAbsences : absenceStore.allAbsences;
 })
 
 const formatDate = (dateString) => {
@@ -295,8 +290,13 @@ const handleRowClick = (event, { item }) => {
 
 onMounted(async () => {
     if (!authStore.user) await authStore.fetchCurrentUser()
-    if (absenceStore.absences.length === 0) await absenceStore.fetchAbsences(authStore.isManager)
-    if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
+    
+    if (authStore.isManager) {
+        await absenceStore.fetchAbsences()
+        if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
+    } else {
+        await absenceStore.fetchMyAbsences()
+    }
 })
 </script>
 
