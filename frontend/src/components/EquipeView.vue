@@ -56,6 +56,9 @@
 
                 <template v-slot:item.actions="{ item }">
                     <div class="d-flex justify-end pr-2">
+                        <v-btn v-if="authStore.isManager" icon="mdi-brain" variant="text" size="small" color="secondary"
+                            class="mr-1" title="Profil IA (Préférences)" @click="openAiProfile(item)"></v-btn>
+
                         <v-btn v-if="authStore.isManager || item.id === authStore.user?.employee_id"
                             icon="mdi-calendar-clock" variant="text" size="small" color="secondary" class="mr-1"
                             title="Gérer les disponibilités" @click="openAvailabilityModal(item)"></v-btn>
@@ -207,6 +210,50 @@
             </v-card>
         </v-dialog>
 
+        <v-dialog v-model="aiProfileDialog" max-width="500">
+            <v-card rounded="xl" border elevation="0" v-if="selectedEmployeeForAi">
+                <v-card-title class="px-6 pt-6 pb-2 font-weight-bold text-h6">
+                    Profil IA: {{ selectedEmployeeForAi.firstName }}
+                </v-card-title>
+                <v-card-text class="px-6 py-4">
+                    <div v-if="!managementStore.employeePreferences[selectedEmployeeForAi.id]">
+                        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+                    </div>
+                    <div v-else-if="managementStore.employeePreferences[selectedEmployeeForAi.id].error">
+                        <p class="text-error">Pas assez de données historiques pour analyser ce profil.</p>
+                    </div>
+                    <div v-else>
+                        <h4 class="mb-2 text-subtitle-2 text-grey-darken-1 text-uppercase">Préférences de Période</h4>
+                        <div class="d-flex flex-wrap gap-2 mb-4">
+                            <v-chip
+                                v-for="(score, type) in managementStore.employeePreferences[selectedEmployeeForAi.id].shift_type_preferences"
+                                :key="type" color="primary" variant="tonal">
+                                {{ type }} ({{ Math.round(score * 100) }}%)
+                            </v-chip>
+                        </div>
+
+                        <h4 class="mb-2 text-subtitle-2 text-grey-darken-1 text-uppercase">Collègues fréquents</h4>
+                        <v-list lines="one" class="pa-0 bg-transparent">
+                            <v-list-item
+                                v-for="colleague in managementStore.employeePreferences[selectedEmployeeForAi.id].preferred_colleagues"
+                                :key="colleague.employee_id" class="px-0">
+                                <template v-slot:prepend>
+                                    <v-avatar color="grey-lighten-3" size="32" class="mr-3">
+                                        <span class="text-caption">{{ colleague.employee_name.charAt(0) }}</span>
+                                    </v-avatar>
+                                </template>
+                                <v-list-item-title class="text-body-2 font-weight-bold">{{ colleague.employee_name
+                                    }}</v-list-item-title>
+                                <v-list-item-subtitle class="text-caption">Travaillé ensemble {{
+                                    colleague.co_assignments }}
+                                    fois</v-list-item-subtitle>
+                            </v-list-item>
+                        </v-list>
+                    </div>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
+
         <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" location="bottom right"
             rounded="pill">
             <div class="d-flex align-center font-weight-medium">
@@ -224,6 +271,9 @@ import { useRoleStore } from '../stores/roleStore'
 import { useContractStore } from '../stores/contractStore'
 import { useAvailabilityStore } from '../stores/availabilityStore'
 import { useAuthStore } from '../stores/authStore'
+import { useManagementStore } from '../stores/managementStore'
+
+const managementStore = useManagementStore()
 
 const employeeStore = useEmployeeStore()
 const roleStore = useRoleStore()
@@ -355,7 +405,11 @@ const deleteItemConfirm = async () => {
 
 const openAvailabilityModal = async (item) => {
     currentEmployeeForAvailability.value = item
-    await availabilityStore.fetchAvailabilitiesByEmployee(item.id)
+    if (authStore.isManager) {
+        await availabilityStore.fetchAvailabilitiesByEmployee(item.id)
+    } else {
+        await availabilityStore.fetchMyAvailabilities()
+    }
     dialogAvailability.value = true
 }
 
@@ -379,6 +433,17 @@ const deleteAvailability = async (id) => {
         showNotification('Disponibilité supprimée')
     } catch (err) {
         showNotification('Erreur lors de la suppression', 'error')
+    }
+}
+
+const aiProfileDialog = ref(false);
+const selectedEmployeeForAi = ref(null);
+
+const openAiProfile = async (employee) => {
+    selectedEmployeeForAi.value = employee;
+    aiProfileDialog.value = true;
+    if (!managementStore.employeePreferences[employee.id]) {
+        await managementStore.fetchEmployeePreferences(employee.id);
     }
 }
 

@@ -7,6 +7,11 @@
             </div>
 
             <div class="d-flex flex-column flex-sm-row align-stretch align-sm-center gap-4">
+                <v-btn v-if="authStore.isManager && currentSchedule" color="secondary" variant="tonal" rounded="lg"
+                    prepend-icon="mdi-brain" @click="analyzeSchedule" :loading="managementStore.isLoading">
+                    Analyse IA
+                </v-btn>
+
                 <v-btn-toggle v-model="currentView" mandatory color="primary" variant="outlined"
                     class="bg-white flex-grow-1 flex-sm-grow-0" rounded="lg" divided>
                     <v-btn value="day" class="font-weight-bold text-body-2 flex-grow-1" height="40">Jour</v-btn>
@@ -73,7 +78,7 @@
                                 <v-avatar :color="!shift.employeeId ? 'error-lighten-4' : 'grey-lighten-3'" size="40"
                                     class="mr-3 mr-sm-4 rounded-lg">
                                     <span v-if="shift.employeeId" class="font-weight-bold">{{
-                                        shift.employeeName.charAt(0) }}</span>
+                                        shift.employeeName?.charAt(0) || '?' }}</span>
                                     <v-icon v-else color="error">mdi-account-alert</v-icon>
                                 </v-avatar>
                                 <div>
@@ -217,6 +222,49 @@
                                 variant="outlined" density="comfortable" color="primary" clearable
                                 placeholder="Laisser vide pour assigner plus tard"></v-select>
                         </v-col>
+
+                        <v-col cols="12" class="pt-0"
+                            v-if="isEditing && !editedShift.employeeId && authStore.isManager">
+                            <div class="d-flex align-center mb-2">
+                                <v-icon color="secondary" size="small" class="mr-2">mdi-auto-fix</v-icon>
+                                <span class="text-subtitle-2 font-weight-bold text-secondary">Suggestions IA</span>
+                                <v-spacer></v-spacer>
+                                <v-progress-circular v-if="managementStore.isRecommending" indeterminate size="16"
+                                    width="2" color="secondary"></v-progress-circular>
+                            </div>
+
+                            <v-card v-if="managementStore.shiftRecommendations?.recommendations?.length > 0" border
+                                elevation="0" rounded="lg" class="bg-blue-lighten-5 pa-2">
+                                <v-list class="bg-transparent pa-0" lines="two">
+                                    <v-list-item
+                                        v-for="rec in managementStore.shiftRecommendations.recommendations.slice(0, 3)"
+                                        :key="rec.employee_id" class="px-3 py-2 mb-1 rounded bg-white" border>
+                                        <template v-slot:prepend>
+                                            <v-avatar color="primary-lighten-4" size="32" class="mr-3">
+                                                <span class="text-caption font-weight-bold text-primary">{{
+                                                    rec.employee_name?.charAt(0) || '?' }}</span>
+                                            </v-avatar>
+                                        </template>
+                                        <v-list-item-title class="text-body-2 font-weight-bold">{{ rec.employee_name
+                                            }}</v-list-item-title>
+                                        <v-list-item-subtitle class="text-caption text-grey-darken-1">
+                                            Score: {{ Math.round(rec.score * 100) }}% - {{ rec.explanation }}
+                                        </v-list-item-subtitle>
+                                        <template v-slot:append>
+                                            <v-btn size="small" color="secondary" variant="tonal" rounded="lg"
+                                                class="font-weight-bold px-4"
+                                                @click="assignRecommended(rec.employee_id)">
+                                                Assigner
+                                            </v-btn>
+                                        </template>
+                                    </v-list-item>
+                                </v-list>
+                            </v-card>
+                            <div v-else-if="!managementStore.isRecommending && managementStore.shiftRecommendations && managementStore.shiftRecommendations.recommendations.length === 0"
+                                class="text-caption text-grey-darken-1 text-center py-2">
+                                Aucun employé idéal trouvé pour ce shift.
+                            </div>
+                        </v-col>
                     </v-row>
                 </v-card-text>
 
@@ -253,8 +301,46 @@
                     <v-btn variant="text" color="grey-darken-2" class="mr-3 font-weight-medium" rounded="lg"
                         @click="deleteConfirmDialog = false">Annuler</v-btn>
                     <v-btn variant="flat" color="error" rounded="lg" class="px-6 font-weight-bold"
-                        @click="executeDelete">Oui, supprimer</v-btn>
+                        @click="executeDelete">Oui,
+                        supprimer</v-btn>
                 </div>
+            </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="aiAnalysisDialog" max-width="600">
+            <v-card rounded="xl" elevation="0" border>
+                <v-card-title class="px-6 pt-6 pb-4 font-weight-bold text-h6 d-flex justify-space-between align-center">
+                    <span><v-icon color="secondary" class="mr-2">mdi-auto-fix</v-icon> Rapport d'Optimisation</span>
+                    <v-btn icon="mdi-close" variant="text" @click="aiAnalysisDialog = false"></v-btn>
+                </v-card-title>
+                <v-card-text class="px-6 pb-6 bg-grey-lighten-4">
+                    <div v-if="managementStore.optimizationOpportunities.length === 0"
+                        class="text-center py-4 text-success">
+                        <v-icon size="40" class="mb-2">mdi-check-decagram</v-icon>
+                        <h3>Planning optimal !</h3>
+                        <p>Le staffing correspond parfaitement à l'historique d'activité.</p>
+                    </div>
+
+                    <v-card v-for="(opp, idx) in managementStore.optimizationOpportunities" :key="idx" class="mb-3 pa-4"
+                        border elevation="0" rounded="lg">
+                        <div class="d-flex align-center">
+                            <v-avatar :color="opp.type === 'understaffing' ? 'error-lighten-4' : 'warning-lighten-4'"
+                                size="40" class="mr-3">
+                                <v-icon :color="opp.type === 'understaffing' ? 'error' : 'warning'">
+                                    {{ opp.type === 'understaffing' ? 'mdi-account-plus' : 'mdi-account-minus' }}
+                                </v-icon>
+                            </v-avatar>
+                            <div>
+                                <h4 class="font-weight-bold">{{ opp.shift_date }} à {{ opp.shift_time }}</h4>
+                                <p class="text-body-2 text-grey-darken-2">{{ opp.suggestion }}</p>
+                                <v-chip size="x-small" class="mt-1 font-weight-bold"
+                                    :color="opp.impact === 'high' ? 'error' : 'warning'">
+                                    Impact: {{ opp.impact }}
+                                </v-chip>
+                            </div>
+                        </div>
+                    </v-card>
+                </v-card-text>
             </v-card>
         </v-dialog>
 
@@ -274,6 +360,9 @@ import { useScheduleStore } from '../stores/scheduleStore'
 import { useEmployeeStore } from '../stores/employeeStore'
 import { useRoleStore } from '../stores/roleStore'
 import { useAuthStore } from '../stores/authStore'
+import { useManagementStore } from '../stores/managementStore'
+
+const managementStore = useManagementStore()
 
 const scheduleStore = useScheduleStore()
 const employeeStore = useEmployeeStore()
@@ -427,11 +516,22 @@ const openNewShiftModal = (date) => {
     shiftDialog.value = true
 }
 
-const editExistingShift = (shift) => {
+const editExistingShift = async (shift) => {
     isEditing.value = true
     editedShiftId.value = shift.id
     editedShift.value = { ...shift }
     shiftDialog.value = true
+
+    if (!shift.employeeId && authStore.isManager) {
+        await managementStore.fetchShiftRecommendations(shift.id)
+    } else {
+        managementStore.shiftRecommendations = null;
+    }
+}
+
+const assignRecommended = (employeeId) => {
+    editedShift.value.employeeId = employeeId;
+    saveShift();
 }
 
 const closeShiftModal = () => {
@@ -489,13 +589,27 @@ const getRoleColor = (role) => {
     return colors[role] || '#94A3B8'
 }
 
+const aiAnalysisDialog = ref(false);
+
+const analyzeSchedule = async () => {
+    if (currentSchedule.value) {
+        await managementStore.fetchOptimizationOpportunities(currentSchedule.value.id);
+        aiAnalysisDialog.value = true;
+    }
+}
+
 onMounted(async () => {
     if (!authStore.user) await authStore.fetchCurrentUser()
     if (roleStore.roles.length === 0) await roleStore.fetchRoles()
-    if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
 
     await scheduleStore.fetchSchedules()
-    if (scheduleStore.shifts.length === 0) await scheduleStore.fetchWeeklyShifts()
+
+    if (authStore.isManager) {
+        if (employeeStore.employees.length === 0) await employeeStore.fetchEmployees()
+        await scheduleStore.fetchWeeklyShifts()
+    } else {
+        await scheduleStore.fetchMyShifts()
+    }
 })
 </script>
 

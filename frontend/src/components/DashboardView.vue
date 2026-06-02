@@ -137,22 +137,73 @@
 
             <v-col cols="12" md="4" v-if="authStore.isManager">
                 <v-card border elevation="0" rounded="xl" class="fill-height" bg-color="#F4F6FF">
-                    <v-card-title class="px-6 pt-6 pb-3">
+                    <v-card-title class="px-6 pt-6 pb-3 d-flex justify-space-between align-center">
                         <span class="text-h6 font-weight-bold text-primary d-flex align-center">
                             <v-icon class="mr-2">mdi-creation</v-icon> Insights IA
                         </span>
+                        <v-btn icon="mdi-refresh" variant="text" color="primary" size="small" @click="runAiScan"
+                            :loading="managementStore.isLoading"></v-btn>
                     </v-card-title>
+
                     <v-card-text class="px-6">
-                        <v-card border elevation="0" rounded="xl" class="mb-4 pa-5 insight-card" color="white">
+                        <p v-if="managementStore.alerts.length === 0 && managementStore.rebalancingSuggestions.length === 0"
+                            class="text-body-2 text-grey-darken-1 mb-5 text-center mt-4">
+                            <v-icon size="large" color="success" class="mb-2">mdi-check-circle-outline</v-icon><br>
+                            Tout va bien ! Aucune alerte système ou suggestion d'optimisation.
+                        </p>
+
+                        <v-card v-for="alert in managementStore.alerts" :key="'alert_' + alert.id" border elevation="0"
+                            rounded="xl" class="mb-4 pa-5 insight-card" color="white">
                             <div class="d-flex align-start">
-                                <v-avatar color="#FFFBEB" size="40" rounded="lg" class="mr-4 mt-1"><v-icon
-                                        color="warning" size="small">mdi-account-alert</v-icon></v-avatar>
-                                <div>
-                                    <h4 class="text-subtitle-1 font-weight-bold mb-1">Risque de surcharge</h4>
-                                    <p class="text-body-2 text-grey-darken-1 mb-3 lh-sm">Vérifiez vos équipes.</p>
+                                <v-avatar
+                                    :color="alert.severity === 'HIGH' || alert.severity === 'CRITICAL' ? '#FEF2F2' : '#FFFBEB'"
+                                    size="40" rounded="lg" class="mr-4 mt-1">
+                                    <v-icon
+                                        :color="alert.severity === 'HIGH' || alert.severity === 'CRITICAL' ? 'error' : 'warning'"
+                                        size="small">
+                                        {{ alert.alert_type === 'COVERAGE' ? 'mdi-calendar-alert' : 'mdi-alert-outline'
+                                        }}
+                                    </v-icon>
+                                </v-avatar>
+                                <div class="flex-grow-1">
+                                    <h4 class="text-subtitle-1 font-weight-bold mb-1">{{ alert.title }}</h4>
+                                    <p class="text-body-2 text-grey-darken-1 mb-3 lh-sm">{{ alert.message }}</p>
+
+                                    <div class="d-flex justify-end">
+                                        <v-btn size="small" variant="tonal"
+                                            :color="alert.severity === 'HIGH' || alert.severity === 'CRITICAL' ? 'error' : 'warning'"
+                                            rounded="lg" class="font-weight-bold"
+                                            @click="managementStore.resolveAlert(alert.id)">
+                                            Résoudre
+                                        </v-btn>
+                                    </div>
                                 </div>
                             </div>
                         </v-card>
+
+                        <v-card v-for="(suggestion, index) in managementStore.rebalancingSuggestions"
+                            :key="'sugg_' + index" border elevation="0" rounded="xl" class="mb-4 pa-5 insight-card"
+                            color="white">
+                            <div class="d-flex align-start">
+                                <v-avatar color="#E0F2FE" size="40" rounded="lg" class="mr-4 mt-1">
+                                    <v-icon color="info" size="small">mdi-scale-balance</v-icon>
+                                </v-avatar>
+                                <div class="flex-grow-1">
+                                    <h4 class="text-subtitle-1 font-weight-bold mb-1">Optimisation d'équipe</h4>
+                                    <p class="text-body-2 text-grey-darken-1 mb-3 lh-sm">
+                                        {{ suggestion.description || suggestion.message || 'Une opportunité pour rééquilibrer la charge de travail a été détectée.' }}
+                                    </p>
+
+                                    <div class="d-flex justify-end">
+                                        <v-btn size="small" variant="tonal" color="info" rounded="lg"
+                                            class="font-weight-bold" to="/plannings">
+                                            Voir le planning
+                                        </v-btn>
+                                    </div>
+                                </div>
+                            </div>
+                        </v-card>
+
                     </v-card-text>
                 </v-card>
             </v-col>
@@ -161,16 +212,19 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { api } from '../services/api'
 import { useScheduleStore } from '../stores/scheduleStore'
 import { useAbsenceStore } from '../stores/absenceStore'
 import { useAuthStore } from '../stores/authStore'
+import { useManagementStore } from '../stores/managementStore'
 
 const router = useRouter()
 const scheduleStore = useScheduleStore()
 const absenceStore = useAbsenceStore()
 const authStore = useAuthStore()
+const managementStore = useManagementStore()
 
 const today = new Date()
 const year = today.getFullYear()
@@ -187,21 +241,14 @@ const completionRate = computed(() => {
     return Math.round((assigned / total) * 100)
 })
 
-const employeeWeeklyHours = computed(() => {
-    if (!authStore.user?.employee_id) return 0;
-    return scheduleStore.shifts.filter(s => s.employeeId === authStore.user.employee_id).length * 8;
-})
-
-const myAbsencesCount = computed(() => {
-    if (!authStore.user?.employee_id) return 0;
-    return absenceStore.absences.filter(a => a.employeeId === authStore.user.employee_id).length;
-})
+const employeeWeeklyHours = ref(0)
+const myAbsencesCount = computed(() => absenceStore.absences.length)
 
 const displayedShifts = computed(() => {
     if (authStore.isManager) {
         return scheduleStore.getShiftsByDate(todayStr) || []
     } else {
-        return scheduleStore.shifts.filter(s => s.employeeId === authStore.user?.employee_id).slice(0, 5)
+        return scheduleStore.shifts.slice(0, 5)
     }
 })
 
@@ -216,15 +263,51 @@ const getStatusColor = (status) => {
 }
 
 onMounted(async () => {
-    if (!authStore.user) {
-        await authStore.fetchCurrentUser()
+    if (!authStore.user) await authStore.fetchCurrentUser()
+
+    const curr = new Date();
+    const first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1);
+    const last = first + 6;
+    const startDate = new Date(curr.setDate(first));
+    const endDate = new Date(curr.setDate(last));
+    const startStr = startDate.toISOString().split('T')[0];
+    const endStr = endDate.toISOString().split('T')[0];
+
+    if (authStore.isManager) {
+        await Promise.all([
+            scheduleStore.fetchWeeklyShifts(),
+            absenceStore.fetchAbsences()
+        ])
+
+        await Promise.all([
+            managementStore.fetchAlerts(),
+            managementStore.fetchRebalancingSuggestions(startStr, endStr)
+        ])
+    } else {
+        await Promise.all([
+            scheduleStore.fetchMyShifts(),
+            absenceStore.fetchMyAbsences()
+        ])
+
+        try {
+            const res = await api.get(`/api/v1/shifts/me/hours?start_date=${startStr}&end_date=${endStr}`);
+            employeeWeeklyHours.value = res.total_hours || res || 0;
+        } catch (e) {
+            console.error("Erreur chargement heures:", e);
+            employeeWeeklyHours.value = 0;
+        }
     }
-    
-    await Promise.all([
-        scheduleStore.fetchWeeklyShifts(),
-        absenceStore.fetchAbsences(authStore.isManager)
-    ])
 })
+
+const runAiScan = async () => {
+    const curr = new Date();
+    const first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1);
+    const startStr = new Date(curr.setDate(first)).toISOString().split('T')[0];
+    const endStr = new Date(curr.setDate(first + 6)).toISOString().split('T')[0];
+
+    await managementStore.triggerInsightsRefresh()
+    await managementStore.fetchRebalancingSuggestions(startStr, endStr)
+}
 </script>
 
 <style scoped>

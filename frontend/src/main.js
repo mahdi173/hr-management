@@ -7,6 +7,12 @@ import { MotionPlugin } from "@vueuse/motion";
 
 const app = createApp(App);
 
+app.config.errorHandler = (err, instance, info) => {
+  console.error('Vue Error:', err)
+  console.error('Component:', instance)
+  console.error('Info:', info)
+}
+
 app.use(vuetify);
 app.use(createPinia());
 app.use(router);
