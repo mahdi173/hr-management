@@ -7,6 +7,11 @@
             </div>
 
             <div class="d-flex flex-column flex-sm-row align-stretch align-sm-center gap-4">
+                <v-btn v-if="authStore.isManager && currentSchedule" color="secondary" variant="tonal" rounded="lg"
+                    prepend-icon="mdi-brain" @click="analyzeSchedule" :loading="managementStore.isLoading">
+                    Analyse IA
+                </v-btn>
+
                 <v-btn-toggle v-model="currentView" mandatory color="primary" variant="outlined"
                     class="bg-white flex-grow-1 flex-sm-grow-0" rounded="lg" divided>
                     <v-btn value="day" class="font-weight-bold text-body-2 flex-grow-1" height="40">Jour</v-btn>
@@ -72,7 +77,8 @@
                                 </div>
                                 <v-avatar :color="!shift.employeeId ? 'error-lighten-4' : 'grey-lighten-3'" size="40"
                                     class="mr-3 mr-sm-4 rounded-lg">
-                                    <span v-if="shift.employeeId" class="font-weight-bold">{{ shift.employeeName?.charAt(0) || '?' }}</span>
+                                    <span v-if="shift.employeeId" class="font-weight-bold">{{
+                                        shift.employeeName?.charAt(0) || '?' }}</span>
                                     <v-icon v-else color="error">mdi-account-alert</v-icon>
                                 </v-avatar>
                                 <div>
@@ -235,7 +241,8 @@
                                         :key="rec.employee_id" class="px-3 py-2 mb-1 rounded bg-white" border>
                                         <template v-slot:prepend>
                                             <v-avatar color="primary-lighten-4" size="32" class="mr-3">
-                                                <span class="text-caption font-weight-bold text-primary">{{ rec.employee_name?.charAt(0) || '?' }}</span>
+                                                <span class="text-caption font-weight-bold text-primary">{{
+                                                    rec.employee_name?.charAt(0) || '?' }}</span>
                                             </v-avatar>
                                         </template>
                                         <v-list-item-title class="text-body-2 font-weight-bold">{{ rec.employee_name
@@ -297,6 +304,43 @@
                         @click="executeDelete">Oui,
                         supprimer</v-btn>
                 </div>
+            </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="aiAnalysisDialog" max-width="600">
+            <v-card rounded="xl" elevation="0" border>
+                <v-card-title class="px-6 pt-6 pb-4 font-weight-bold text-h6 d-flex justify-space-between align-center">
+                    <span><v-icon color="secondary" class="mr-2">mdi-auto-fix</v-icon> Rapport d'Optimisation</span>
+                    <v-btn icon="mdi-close" variant="text" @click="aiAnalysisDialog = false"></v-btn>
+                </v-card-title>
+                <v-card-text class="px-6 pb-6 bg-grey-lighten-4">
+                    <div v-if="managementStore.optimizationOpportunities.length === 0"
+                        class="text-center py-4 text-success">
+                        <v-icon size="40" class="mb-2">mdi-check-decagram</v-icon>
+                        <h3>Planning optimal !</h3>
+                        <p>Le staffing correspond parfaitement à l'historique d'activité.</p>
+                    </div>
+
+                    <v-card v-for="(opp, idx) in managementStore.optimizationOpportunities" :key="idx" class="mb-3 pa-4"
+                        border elevation="0" rounded="lg">
+                        <div class="d-flex align-center">
+                            <v-avatar :color="opp.type === 'understaffing' ? 'error-lighten-4' : 'warning-lighten-4'"
+                                size="40" class="mr-3">
+                                <v-icon :color="opp.type === 'understaffing' ? 'error' : 'warning'">
+                                    {{ opp.type === 'understaffing' ? 'mdi-account-plus' : 'mdi-account-minus' }}
+                                </v-icon>
+                            </v-avatar>
+                            <div>
+                                <h4 class="font-weight-bold">{{ opp.shift_date }} à {{ opp.shift_time }}</h4>
+                                <p class="text-body-2 text-grey-darken-2">{{ opp.suggestion }}</p>
+                                <v-chip size="x-small" class="mt-1 font-weight-bold"
+                                    :color="opp.impact === 'high' ? 'error' : 'warning'">
+                                    Impact: {{ opp.impact }}
+                                </v-chip>
+                            </div>
+                        </div>
+                    </v-card>
+                </v-card-text>
             </v-card>
         </v-dialog>
 
@@ -543,6 +587,15 @@ const getRoleColor = (role) => {
         'Plongeur': '#64748B'
     }
     return colors[role] || '#94A3B8'
+}
+
+const aiAnalysisDialog = ref(false);
+
+const analyzeSchedule = async () => {
+    if (currentSchedule.value) {
+        await managementStore.fetchOptimizationOpportunities(currentSchedule.value.id);
+        aiAnalysisDialog.value = true;
+    }
 }
 
 onMounted(async () => {

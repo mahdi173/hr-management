@@ -8,8 +8,12 @@ export const useManagementStore = defineStore("management", {
     rebalancingSuggestions: [],
     scheduleHealth: null,
     shiftRecommendations: null,
+    learnedPatterns: null,
+    optimizationOpportunities: [],
+    employeePreferences: {},
     isLoading: false,
     isRecommending: false,
+    isTraining: false,
   }),
 
   actions: {
@@ -88,6 +92,49 @@ export const useManagementStore = defineStore("management", {
         console.error("Error fetching shift recommendations:", err);
       } finally {
         this.isRecommending = false;
+      }
+    },
+
+    async trainAiPreferences() {
+      this.isTraining = true;
+      try {
+        await api.post(
+          "/analytics/learn-preferences?lookback_months=3&min_samples=3",
+        );
+      } catch (err) {
+        console.error("Error training AI preferences:", err);
+      } finally {
+        this.isTraining = false;
+      }
+    },
+
+    async fetchLearnedPatterns() {
+      try {
+        this.learnedPatterns = await api.get("/analytics/learned-patterns");
+      } catch (err) {
+        console.error("Error fetching learned patterns:", err);
+      }
+    },
+
+    async fetchOptimizationOpportunities(scheduleId) {
+      try {
+        const res = await api.get(
+          `/analytics/schedule/${scheduleId}/optimization-opportunities`,
+        );
+        this.optimizationOpportunities = res.opportunities || [];
+      } catch (err) {
+        console.error("Error fetching optimization opportunities:", err);
+      }
+    },
+
+    async fetchEmployeePreferences(employeeId) {
+      try {
+        const res = await api.get(
+          `/analytics/employees/${employeeId}/learned-preferences`,
+        );
+        this.employeePreferences[employeeId] = res;
+      } catch (err) {
+        console.error("Error fetching employee preferences:", err);
       }
     },
   },

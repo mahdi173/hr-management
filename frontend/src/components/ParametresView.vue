@@ -3,10 +3,30 @@
         <div class="d-flex flex-column flex-md-row justify-space-between align-md-center mb-6 mt-2">
             <div>
                 <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">Paramètres</h1>
-                <p class="text-body-1 text-grey-darken-1">Configurez les rôles et les types de contrats de votre
-                    établissement.</p>
+                <p class="text-body-1 text-grey-darken-1">Configurez l'intelligence artificielle, les rôles et les types
+                    de contrats.</p>
             </div>
         </div>
+
+        <v-card border elevation="0" rounded="xl" class="mb-8 overflow-hidden border-primary">
+            <div
+                class="bg-blue-lighten-5 pa-6 d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between">
+                <div class="mb-4 mb-sm-0 pr-sm-6">
+                    <h3 class="text-h6 font-weight-bold d-flex align-center text-primary mb-1">
+                        <v-icon class="mr-2">mdi-brain</v-icon> Entraînement de l'IA (Machine Learning)
+                    </h3>
+                    <p class="text-body-2 text-grey-darken-3 lh-sm">
+                        Lancez l'analyse de l'historique des 3 derniers mois. L'IA apprendra les préférences de vos
+                        employés (horaires, jours, collègues favoris) et optimisera ses futures recommandations de
+                        planning.
+                    </p>
+                </div>
+                <v-btn color="primary" variant="flat" rounded="lg" class="font-weight-bold px-6 flex-shrink-0"
+                    size="large" @click="trainAi" :loading="managementStore.isTraining">
+                    <v-icon class="mr-2">mdi-play-circle</v-icon> Lancer l'apprentissage
+                </v-btn>
+            </div>
+        </v-card>
 
         <v-row>
             <v-col cols="12" md="6">
@@ -198,18 +218,25 @@
 import { ref, onMounted } from 'vue'
 import { useRoleStore } from '../stores/roleStore'
 import { useContractStore } from '../stores/contractStore'
+import { useAuthStore } from '../stores/authStore'
+import { useManagementStore } from '../stores/managementStore'
 
 const roleStore = useRoleStore()
 const contractStore = useContractStore()
+const authStore = useAuthStore()
+const managementStore = useManagementStore()
 
 const snackbar = ref({ show: false, text: '', color: 'success', icon: 'mdi-check-circle' })
-
 const showNotification = (text, type = 'success') => {
-    snackbar.value = {
-        show: true,
-        text,
-        color: type,
-        icon: type === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'
+    snackbar.value = { show: true, text, color: type, icon: type === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }
+}
+
+const trainAi = async () => {
+    try {
+        await managementStore.trainAiPreferences()
+        showNotification("L'IA a terminé l'analyse de l'historique avec succès !")
+    } catch (err) {
+        showNotification("Erreur lors de l'apprentissage de l'IA", "error")
     }
 }
 
@@ -217,7 +244,6 @@ const dialogRole = ref(false)
 const dialogDeleteRole = ref(false)
 const editedRoleIndex = ref(-1)
 const roleToDelete = ref(null)
-
 const defaultRole = { name: '' }
 const editedRole = ref({ ...defaultRole })
 
@@ -235,10 +261,7 @@ const editRole = (role) => {
 
 const closeRoleModal = () => {
     dialogRole.value = false
-    setTimeout(() => {
-        editedRole.value = { ...defaultRole }
-        editedRoleIndex.value = -1
-    }, 300)
+    setTimeout(() => { editedRole.value = { ...defaultRole }; editedRoleIndex.value = -1 }, 300)
 }
 
 const saveRole = async () => {
@@ -252,7 +275,7 @@ const saveRole = async () => {
         }
         closeRoleModal()
     } catch (error) {
-        showNotification('Erreur lors de la sauvegarde du rôle', 'error')
+        showNotification('Erreur lors de la sauvegarde', 'error')
     }
 }
 
@@ -278,7 +301,6 @@ const dialogContract = ref(false)
 const dialogDeleteContract = ref(false)
 const editedContractIndex = ref(-1)
 const contractToDelete = ref(null)
-
 const defaultContract = { name: '', weekly_hours: 35 }
 const editedContract = ref({ ...defaultContract })
 
@@ -296,10 +318,7 @@ const editContract = (contract) => {
 
 const closeContractModal = () => {
     dialogContract.value = false
-    setTimeout(() => {
-        editedContract.value = { ...defaultContract }
-        editedContractIndex.value = -1
-    }, 300)
+    setTimeout(() => { editedContract.value = { ...defaultContract }; editedContractIndex.value = -1 }, 300)
 }
 
 const saveContract = async () => {
@@ -313,7 +332,7 @@ const saveContract = async () => {
         }
         closeContractModal()
     } catch (error) {
-        showNotification('Erreur lors de la sauvegarde du contrat', 'error')
+        showNotification('Erreur lors de la sauvegarde', 'error')
     }
 }
 
@@ -336,6 +355,7 @@ const deleteContractConfirm = async () => {
 }
 
 onMounted(async () => {
+    if (!authStore.user) await authStore.fetchCurrentUser()
     await Promise.all([
         roleStore.fetchRoles(),
         contractStore.fetchContracts()
@@ -346,5 +366,9 @@ onMounted(async () => {
 <style scoped>
 .border-bottom {
     border-bottom: 1px solid #E2E8F0;
+}
+
+.border-primary {
+    border: 1px solid #BFDBFE !important;
 }
 </style>
