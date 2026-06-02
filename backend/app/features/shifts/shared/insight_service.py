@@ -9,7 +9,7 @@ from ....repositories.shift_repository import ShiftRepository, ShiftAssignmentRe
 from ....repositories.employee_repository import EmployeeRepository
 from ....repositories.schedule_repository import ScheduleRepository
 from .alert_service import AlertService
-from ....models.alert import AlertType, AlertSeverity, InsightType
+from ....models.alert import Alert, AlertType, AlertSeverity, InsightType
 
 
 class InsightService:
@@ -52,23 +52,26 @@ class InsightService:
             completion_rate = (total_assigned / total_required) * 100 if total_required > 0 else 100
             
             if completion_rate < 80:
-                title = f"High Completion Risk: {schedule.name}"
-                message = f"Schedule is only {completion_rate:.1f}% complete and starts on {schedule.start_date}."
+                # Check for existing unresolved alert for this schedule
+                existing = self.db.query(Alert).filter(
+                    Alert.insight_type == InsightType.COMPLETION_RISK,
+                    Alert.related_shift_id.in_([s.id for s in shifts]),
+                    Alert.is_resolved == False
+                ).first()
                 
-                # Check for existing unresolved insight for this schedule
-                existing = self.db.query(AlertType).filter(
-                    # We need to filter Alert model here
-                ) # Simplified for now: just use alert_service to create
-                
-                self.alert_service.create_alert(
-                    alert_type=AlertType.INSIGHT,
-                    severity=AlertSeverity.ERROR,
-                    title=title,
-                    message=message,
-                    insight_type=InsightType.COMPLETION_RISK,
-                    recommended_action="Assign more employees or use AI recommendations to fill gaps."
-                )
-                alerts_created += 1
+                if not existing:
+                    title = f"High Completion Risk: {schedule.name}"
+                    message = f"Schedule is only {completion_rate:.1f}% complete and starts on {schedule.start_date}."
+                    
+                    self.alert_service.create_alert(
+                        alert_type=AlertType.INSIGHT,
+                        severity=AlertSeverity.ERROR,
+                        title=title,
+                        message=message,
+                        insight_type=InsightType.COMPLETION_RISK,
+                        recommended_action="Assign more employees or use AI recommendations to fill gaps."
+                    )
+                    alerts_created += 1
                 
         return alerts_created
 
@@ -99,16 +102,24 @@ class InsightService:
                     consecutive_count = 1
                     
                 if consecutive_count >= 6:
-                    self.alert_service.create_alert(
-                        alert_type=AlertType.INSIGHT,
-                        severity=AlertSeverity.WARNING,
-                        title=f"Burnout Risk: {emp.first_name} {emp.last_name}",
-                        message=f"Employee is scheduled for {consecutive_count} consecutive days starting around {dates_worked[i-consecutive_count+1]}.",
-                        insight_type=InsightType.BURNOUT,
-                        recommended_action="Consider reassigning some shifts to other team members.",
-                        related_employee_id=emp.id
-                    )
-                    alerts_created += 1
+                    # Check for existing unresolved burnout alert for this employee
+                    existing = self.db.query(Alert).filter(
+                        Alert.insight_type == InsightType.BURNOUT,
+                        Alert.related_employee_id == emp.id,
+                        Alert.is_resolved == False
+                    ).first()
+                    
+                    if not existing:
+                        self.alert_service.create_alert(
+                            alert_type=AlertType.INSIGHT,
+                            severity=AlertSeverity.WARNING,
+                            title=f"Burnout Risk: {emp.first_name} {emp.last_name}",
+                            message=f"Employee is scheduled for {consecutive_count} consecutive days starting around {dates_worked[i-consecutive_count+1]}.",
+                            insight_type=InsightType.BURNOUT,
+                            recommended_action="Consider reassigning some shifts to other team members.",
+                            related_employee_id=emp.id
+                        )
+                        alerts_created += 1
                     break # Only one alert per employee per scan
                     
         return alerts_created
@@ -133,15 +144,23 @@ class InsightService:
             utilization = (stats["total_hours"] / target_hours) * 100 if target_hours > 0 else 100
             
             if utilization < 50:
-                self.alert_service.create_alert(
-                    alert_type=AlertType.INSIGHT,
-                    severity=AlertSeverity.INFO,
-                    title=f"Underutilization Pattern: {emp.first_name} {emp.last_name}",
-                    message=f"Employee has worked only {utilization:.1f}% of contract hours over the last 2 weeks.",
-                    insight_type=InsightType.UNDERUTILIZATION,
-                    recommended_action="Review assignment distribution and availability.",
-                    related_employee_id=emp.id
-                )
-                alerts_created += 1
+                # Check for existing unresolved underutilization alert for this employee
+                existing = self.db.query(Alert).filter(
+                    Alert.insight_type == InsightType.UNDERUTILIZATION,
+                    Alert.related_employee_id == emp.id,
+                    Alert.is_resolved == False
+                ).first()
+                
+                if not existing:
+                    self.alert_service.create_alert(
+                        alert_type=AlertType.INSIGHT,
+                        severity=AlertSeverity.INFO,
+                        title=f"Underutilization Pattern: {emp.first_name} {emp.last_name}",
+                        message=f"Employee has worked only {utilization:.1f}% of contract hours over the last 2 weeks.",
+                        insight_type=InsightType.UNDERUTILIZATION,
+                        recommended_action="Review assignment distribution and availability.",
+                        related_employee_id=emp.id
+                    )
+                    alerts_created += 1
                 
         return alerts_created

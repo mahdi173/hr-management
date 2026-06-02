@@ -169,8 +169,12 @@ class ShiftAssignmentRepository(BaseRepository[ShiftAssignment]):
         start_date: Optional[date] = None,
         end_date: Optional[date] = None
     ) -> List[ShiftAssignment]:
-        """Get all assignments for a specific employee"""
-        query = self.db.query(ShiftAssignment).join(Shift).filter(
+        """Get all assignments for a specific employee with eager loading of shift"""
+        from sqlalchemy.orm import joinedload
+        
+        query = self.db.query(ShiftAssignment).options(
+            joinedload(ShiftAssignment.shift)
+        ).join(Shift).filter(
             ShiftAssignment.employee_id == employee_id
         )
         

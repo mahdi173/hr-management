@@ -4,7 +4,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from ....models.alert import Alert, AlertType, AlertSeverity
+from ....models.alert import Alert, AlertType, AlertSeverity, InsightType
 from ....repositories.alert_repository import AlertRepository
 
 
@@ -22,7 +22,9 @@ class AlertService:
         title: str,
         message: str,
         related_shift_id: Optional[int] = None,
-        related_employee_id: Optional[int] = None
+        related_employee_id: Optional[int] = None,
+        insight_type: Optional[InsightType] = None,
+        recommended_action: Optional[str] = None
     ) -> Alert:
         """Create a new alert"""
         alert = Alert(
@@ -31,7 +33,9 @@ class AlertService:
             title=title,
             message=message,
             related_shift_id=related_shift_id,
-            related_employee_id=related_employee_id
+            related_employee_id=related_employee_id,
+            insight_type=insight_type,
+            recommended_action=recommended_action
         )
         return self.alert_repo.create(alert)
     
